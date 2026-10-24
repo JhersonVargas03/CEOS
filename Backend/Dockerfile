@@ -53,14 +53,16 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copiar código fuente
 COPY . .
 
-# Recolectar archivos estáticos (Whitenoise los sirve)
-RUN python manage.py collectstatic --noinput || true
+# Dar permisos de ejecución al entrypoint
+RUN chmod +x entrypoint.sh
 
 # Usuario no-root por seguridad
 RUN addgroup --system ceos && adduser --system --ingroup ceos ceos
 USER ceos
 
 EXPOSE 8000
+
+ENTRYPOINT ["./entrypoint.sh"]
 
 # Gunicorn: ajusta --workers según RAM disponible en Koyeb (1 vCPU → 2-3 workers)
 CMD ["gunicorn", "config.wsgi:application", \
