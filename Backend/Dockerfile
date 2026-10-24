@@ -1,0 +1,72 @@
+# ============================================================
+# CEOS Backend — Dockerfile (producción)
+# Base: Python 3.11-slim  (estable en Koyeb)
+# ============================================================
+
+# ---- Etapa 1: dependencias ----
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /build
+
+# Herramientas de compilación necesarias para weasyprint / psycopg2
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+        libcairo2 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf2.0-0 \
+        libffi-dev \
+        shared-mime-info \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
+
+# ---- Etapa 2: imagen final ----
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8000
+
+WORKDIR /app
+
+# Librerías de runtime (sin compiladores)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+        libcairo2 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf2.0-0 \
+        shared-mime-info \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar paquetes instalados desde builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copiar código fuente
+COPY . .
+
+# Recolectar archivos estáticos (Whitenoise los sirve)
+RUN python manage.py collectstatic --noinput || true
+
+# Usuario no-root por seguridad
+RUN addgroup --system ceos && adduser --system --ingroup ceos ceos
+USER ceos
+
+EXPOSE 8000
+
+# Gunicorn: ajusta --workers según RAM disponible en Koyeb (1 vCPU → 2-3 workers)
+CMD ["gunicorn", "config.wsgi:application", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "2", \
+     "--timeout", "120", \
+     "--log-level", "info", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

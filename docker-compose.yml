@@ -1,0 +1,50 @@
+# docker-compose.yml — CEOS Backend (desarrollo local con PostgreSQL)
+# Uso: docker compose up -d
+# Para producción en Koyeb usa el Dockerfile directamente.
+
+version: '3.9'
+
+services:
+
+  # ─── Base de datos PostgreSQL local ───────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ceos_db
+      POSTGRES_USER: ceos_user
+      POSTGRES_PASSWORD: ceos_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ceos_user -d ceos_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Django Backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      DATABASE_URL: postgresql://ceos_user:ceos_pass@db:5432/ceos_db
+      DEBUG: "True"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Hot-reload en desarrollo: monta el código fuente
+      - ./Backend:/app
+      - /app/.venv          # excluye el venv del bind-mount
+      - /app/staticfiles    # excluye carpeta de estáticos generados
+
+volumes:
+  postgres_data:

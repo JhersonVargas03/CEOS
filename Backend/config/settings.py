@@ -28,17 +28,32 @@ except Exception:
     pass
 
 
+# ─── Seguridad ────────────────────────────────────────────────────────────────
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-638ll*57q=flc+dblcsl!gfi7apbln#326fm^ky09!e=e7-s@c')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['*']
+_raw_hosts = os.environ.get('ALLOWED_HOSTS', '*')
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
-# Configuración Telegram Bot API
+# ─── CSRF / CORS para producción ─────────────────────────────────────────────
+_raw_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if _raw_origins:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(',') if o.strip()]
+    CORS_ALLOW_ALL_ORIGINS = False
+else:
+    CORS_ALLOW_ALL_ORIGINS = True
+
+_raw_csrf = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if _raw_csrf:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_csrf.split(',') if o.strip()]
+
+# ─── Telegram Bot API ─────────────────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_BOT_NAME = os.environ.get('TELEGRAM_BOT_NAME', 'Ceos_Clibot')
 TELEGRAM_WEBHOOK_SECRET = os.environ.get('TELEGRAM_WEBHOOK_SECRET', 'ceos_telegram_secret_token_key_2026')
 
+# ─── Apps instaladas ──────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -61,8 +76,10 @@ INSTALLED_APPS = [
     'apps.auditoria',
 ]
 
+# ─── Middleware ───────────────────────────────────────────────────────────────
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',        # Whitenoise después de Security
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -94,33 +111,43 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# ─── Base de datos ────────────────────────────────────────────────────────────
+# En producción usa DATABASE_URL (Neon/Supabase PostgreSQL).
+# En local sigue usando SQLite si no hay DATABASE_URL.
+_database_url = os.environ.get('DATABASE_URL', '')
 
+if _database_url:
+    import dj_database_url  # pip install dj-database-url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# ─── Auth ─────────────────────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 8,
-        }
+        'OPTIONS': {'min_length': 8},
     },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ─── DRF ─────────────────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'apps.usuarios.authentication.CustomJWTAuthentication',
@@ -136,6 +163,7 @@ REST_FRAMEWORK = {
     ),
 }
 
+# ─── JWT ─────────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
@@ -144,12 +172,26 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
-
+# ─── Internacionalización ─────────────────────────────────────────────────────
 LANGUAGE_CODE = 'es-es'
 TIME_ZONE = 'America/Caracas'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+# ─── Archivos estáticos (Whitenoise) ─────────────────────────────────────────
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ─── Archivos media ───────────────────────────────────────────────────────────
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ─── Seguridad en producción ──────────────────────────────────────────────────
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
