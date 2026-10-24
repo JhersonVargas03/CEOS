@@ -1,0 +1,70 @@
+# ============================================================
+# koyeb.yaml — CEOS Backend Service Configuration
+# Docs: https://www.koyeb.com/docs/reference/koyeb-yaml
+# ============================================================
+
+name: ceos-backend
+
+services:
+  - name: api
+    type: web
+
+    # ── Fuente: Docker desde GitHub ───────────────────────
+    git:
+      repository: github.com/JhersonVargas03/CEOS
+      branch: main
+      dockerfile: Backend/Dockerfile
+      buildpack: ~          # fuerza uso de Dockerfile
+
+    # ── Recursos (plan Eco gratis) ────────────────────────
+    instance_type: nano     # 0.1 vCPU / 256MB RAM (gratis)
+    regions:
+      - was                 # Washington DC (menor latencia a Venezuela)
+
+    # ── Red ───────────────────────────────────────────────
+    ports:
+      - port: 8000
+        protocol: http
+
+    # ── Health check (usa nuestro endpoint /health/) ──────
+    health_checks:
+      - port: 8000
+        protocol: http
+        path: /health/
+        grace_period: 60      # segundos antes del primer check
+        interval: 30          # chequeo cada 30s
+        timeout: 5
+        unhealthy_threshold: 3
+        healthy_threshold: 1
+
+    # ── Escalado (mínimo 1 instancia) ────────────────────
+    scaling:
+      min: 1
+      max: 1                  # sube a 2+ en plan pago si necesitas
+
+    # ── Variables de entorno ──────────────────────────────
+    # Define estos valores en: Koyeb Dashboard → Service → Environment
+    # NO pongas valores reales aquí (este archivo va al repositorio).
+    env:
+      - key: SECRET_KEY
+        secret: ceos-secret-key        # crea el secret en Koyeb Secrets
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ""                      # Koyeb lo inyecta automáticamente
+      - key: DATABASE_URL
+        secret: ceos-database-url      # crea el secret en Koyeb Secrets
+      - key: CORS_ALLOWED_ORIGINS
+        value: ""                      # completa con tu dominio .koyeb.app
+      - key: CSRF_TRUSTED_ORIGINS
+        value: ""                      # completa con tu dominio .koyeb.app
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_EMAIL
+        secret: ceos-admin-email
+      - key: DJANGO_SUPERUSER_PASSWORD
+        secret: ceos-admin-password
+      - key: TELEGRAM_BOT_TOKEN
+        secret: ceos-telegram-token
+      - key: TELEGRAM_WEBHOOK_SECRET
+        secret: ceos-telegram-secret
