@@ -1,0 +1,11 @@
+{
+    "python.defaultInterpreterPath": "/home/v4/Ceos/Backend/.venv/bin/python",
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.extraPaths": [
+        "/home/v4/Ceos/Backend"
+    ],
+    "python.analysis.venvPath": "/home/v4/Ceos/Backend",
+    "python.analysis.venv": ".venv",
+    "cmake.sourceDirectory": "/home/v4/Ceos/movil/linux"
+}

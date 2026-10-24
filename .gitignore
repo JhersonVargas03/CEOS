@@ -1,0 +1,106 @@
+# ==============================================================================
+# CEOS — .gitignore Maestro (Monorepo)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Sistema Operativo y Editor / IDEs
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*.swo
+*~
+*.bak
+
+# JetBrains / VSCode
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ------------------------------------------------------------------------------
+# 2. Python y Django Backend
+# ------------------------------------------------------------------------------
+# Entornos virtuales
+Backend/.venv/
+Backend/venv/
+.venv/
+venv/
+env/
+ENV/
+
+# Archivos de configuración sensible / Secretos
+Backend/.env
+Backend/.env.*
+!Backend/.env.example
+.env
+.env.*
+!.env.example
+
+# Bases de datos locales
+*.sqlite3
+Backend/*.sqlite3
+Backend/db.sqlite3
+Backend/tmp_simulacion.sqlite3
+
+# Bytecode y Caché
+__pycache__/
+*.py[cod]
+*$py.class
+Backend/.pytest_cache/
+.pytest_cache/
+*.pyc
+
+# Archivos estáticos y media subidos por usuarios
+Backend/media/
+Backend/staticfiles/
+
+# Respaldos y archivos temporales de Celery
+Backend/tmp_backups/
+celerybeat-schedule
+celerybeat.pid
+*.log
+
+# ------------------------------------------------------------------------------
+# 3. Flutter y Dart (App Móvil)
+# ------------------------------------------------------------------------------
+movil/.dart_tool/
+movil/.flutter-plugins
+movil/.flutter-plugins-dependencies
+movil/.packages
+movil/.pub-cache/
+movil/.pub/
+movil/build/
+movil/coverage/
+movil/.metadata
+
+# Símbolos y mapas de ofuscación
+movil/app.*.symbols
+movil/app.*.map.json
+
+# Artefactos nativos de compilación por plataforma
+movil/android/app/debug/
+movil/android/app/profile/
+movil/android/app/release/
+movil/android/.gradle/
+movil/android/local.properties
+movil/android/**/generated/
+
+movil/linux/flutter/ephemeral/
+movil/windows/flutter/ephemeral/
+movil/macos/Flutter/ephemeral/
+movil/ios/Flutter/Generated.xcconfig
+movil/ios/Flutter/app.framework
+movil/ios/Flutter/Flutter.framework
+movil/ios/Flutter/Flutter.podspec
+movil/ios/.symlinks/
+movil/ios/Pods/
+movil/ios/.last_build_id

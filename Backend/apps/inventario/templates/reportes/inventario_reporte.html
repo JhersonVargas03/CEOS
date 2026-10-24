@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ titulo }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1.5cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 8pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            color: #333333;
+            line-height: 1.4;
+        }
+        .header {
+            border-bottom: 2px solid #1a365d;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .header-table {
+            width: 100%;
+        }
+        .clinic-title {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #1a365d;
+            margin: 0;
+        }
+        .subtitle {
+            font-size: 11pt;
+            color: #4a5568;
+            margin-top: 4px;
+        }
+        .meta-info {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+        }
+        .meta-info table {
+            width: 100%;
+        }
+        .meta-label {
+            font-weight: bold;
+            color: #2d3748;
+            width: 25%;
+        }
+        .summary-box {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .summary-card {
+            display: table-cell;
+            width: 25%;
+            background-color: #ebf8ff;
+            border: 1px solid #bee3f8;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+        .summary-label {
+            font-size: 8pt;
+            text-transform: uppercase;
+            color: #4a5568;
+            letter-spacing: 0.5px;
+        }
+        h2.section-title {
+            font-size: 12pt;
+            color: #1a365d;
+            border-bottom: 1px solid #cbd5e0;
+            padding-bottom: 4px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table.data-table th {
+            background-color: #2b6cb0;
+            color: #ffffff;
+            font-size: 9pt;
+            font-weight: bold;
+            text-align: left;
+            padding: 6px 8px;
+        }
+        table.data-table td {
+            font-size: 8.5pt;
+            padding: 6px 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        table.data-table tr:nth-child(even) {
+            background-color: #f7fafc;
+        }
+        .empty-text {
+            font-style: italic;
+            color: #718096;
+            font-size: 9pt;
+            padding: 8px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 8pt;
+            color: #a0aec0;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table class="header-table">
+            <tr>
+                <td>
+                    <div class="clinic-title">CEOS CLÍNICA DENTAL</div>
+                    <div class="subtitle">{{ titulo }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="meta-info">
+        <table>
+            <tr>
+                <td class="meta-label">Rango de Fechas:</td>
+                <td>{{ periodo_str }}</td>
+                <td class="meta-label">Fecha Emisión:</td>
+                <td>{{ fecha_emision_str }}</td>
+            </tr>
+            <tr>
+                <td class="meta-label">Generado Por:</td>
+                <td>{{ usuario_generador }}</td>
+                <td class="meta-label">Filtro Usuario:</td>
+                <td>{{ usuario_filtrado_str }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Resumen Ejecutivo -->
+    <div class="summary-box">
+        <div class="summary-card">
+            <div class="summary-value">{{ total_ingresos }}</div>
+            <div class="summary-label">Lotes Ingresados</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ total_salidas }}</div>
+            <div class="summary-label">Salidas Registradas</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ total_ajustes }}</div>
+            <div class="summary-label">Ajustes Realizados</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ total_solicitudes }}</div>
+            <div class="summary-label">Solicitudes Material</div>
+        </div>
+    </div>
+
+    <!-- Ingresos de Lotes -->
+    <h2 class="section-title">1. Ingresos de Lotes de Inventario</h2>
+    {% if lotes %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Fecha Ingreso</th>
+                <th>Lote</th>
+                <th>Material</th>
+                <th>Cant. Ingresada</th>
+                <th>Cant. Disponible</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lote in lotes %}
+            <tr>
+                <td>{{ lote.fecha_ingreso }}</td>
+                <td>{{ lote.codigo_lote }}</td>
+                <td>{{ lote.material.nombre }}</td>
+                <td>{{ lote.cantidad_ingresada }}</td>
+                <td>{{ lote.cantidad_disponible }}</td>
+                <td>{{ lote.usuario_ingreso.username|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-text">No se registraron ingresos de lotes en el período seleccionado.</p>
+    {% endif %}
+
+    <!-- Salidas FEFO -->
+    <h2 class="section-title">2. Salidas de Material (Descuentos)</h2>
+    {% if salidas %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Fecha y Hora</th>
+                <th>Material</th>
+                <th>Cant. Total</th>
+                <th>Motivo / Destino</th>
+                <th>Registrado Por</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for salida in salidas %}
+            <tr>
+                <td>{{ salida.fecha_hora|date:"Y-m-d H:i" }}</td>
+                <td>{{ salida.material.nombre }}</td>
+                <td>{{ salida.cantidad_total }}</td>
+                <td>{{ salida.motivo_destino|default:"-" }}</td>
+                <td>{{ salida.usuario.username|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-text">No se registraron salidas de material en el período seleccionado.</p>
+    {% endif %}
+
+    <!-- Ajustes -->
+    <h2 class="section-title">3. Ajustes de Inventario</h2>
+    {% if ajustes %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Fecha y Hora</th>
+                <th>Lote</th>
+                <th>Material</th>
+                <th>Cant. Anterior</th>
+                <th>Cant. Nueva</th>
+                <th>Motivo</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ajuste in ajustes %}
+            <tr>
+                <td>{{ ajuste.fecha_hora|date:"Y-m-d H:i" }}</td>
+                <td>{{ ajuste.lote.codigo_lote }}</td>
+                <td>{{ ajuste.lote.material.nombre }}</td>
+                <td>{{ ajuste.cantidad_anterior }}</td>
+                <td>{{ ajuste.cantidad_nueva }}</td>
+                <td>{{ ajuste.motivo }}</td>
+                <td>{{ ajuste.usuario.username|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-text">No se registraron ajustes de inventario en el período seleccionado.</p>
+    {% endif %}
+
+    <!-- Solicitudes -->
+    <h2 class="section-title">4. Solicitudes de Material</h2>
+    {% if solicitudes %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Fecha Creación</th>
+                <th>Solicitante</th>
+                <th>Material</th>
+                <th>Cant. Solicitada</th>
+                <th>Estado</th>
+                <th>Resuelto Por</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sol in solicitudes %}
+            <tr>
+                <td>{{ sol.fecha_creacion|date:"Y-m-d H:i" }}</td>
+                <td>{{ sol.solicitante.username }}</td>
+                <td>{{ sol.material.nombre }}</td>
+                <td>{{ sol.cantidad_solicitada }}</td>
+                <td>{{ sol.estado|capfirst }}</td>
+                <td>{{ sol.resuelto_por.username|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-text">No se registraron solicitudes de material en el período seleccionado.</p>
+    {% endif %}
+
+    <div class="footer">
+        Documento generado automáticamente por el Sistema CEOS de Gestión Clínica e Inventario.
+    </div>
+
+</body>
+</html>
