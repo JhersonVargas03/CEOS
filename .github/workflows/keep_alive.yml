@@ -1,0 +1,47 @@
+name: CEOS Production Keep-Alive
+
+on:
+  schedule:
+    # Se ejecuta cada 10 minutos para evitar que Koyeb (15-30m) y Neon (5m) entren en suspensión
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions en GitHub
+
+jobs:
+  ping-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping CEOS Backend Health Check
+        env:
+          APP_URL: ${{ secrets.PROD_APP_URL || vars.PROD_APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "⚠️ [AVISO]: La variable o secreto 'PROD_APP_URL' aún no está configurada en GitHub."
+            echo "💡 Para activarlo:"
+            echo "   1. Ve a tu repositorio en GitHub -> Settings -> Secrets and variables -> Actions"
+            echo "   2. En 'Variables' (o 'Secrets'), crea una nueva llamada: PROD_APP_URL"
+            echo "   3. Valor: https://tu-servicio.koyeb.app"
+            echo "   (El workflow anexará automáticamente /health/ para despertar Koyeb y Neon)"
+            exit 0
+          fi
+
+          # Eliminar barra final si existe
+          CLEAN_URL="${APP_URL%/}"
+          TARGET_URL="${CLEAN_URL}/health/"
+
+          echo "🚀 Enviando ping de mantenimiento a: $TARGET_URL"
+          
+          # Hacemos hasta 2 intentos con timeout de 45s por si ocurre un cold start inicial
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" --max-time 45 --retry 2 --retry-delay 5 "$TARGET_URL" || echo "000")
+
+          echo "📡 Código de respuesta HTTP: $HTTP_STATUS"
+          cat response.json 2>/dev/null || true
+          echo ""
+
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ CEOS Backend y Base de Datos Neon activos y respondiendo correctamente."
+          else
+            echo "❌ Alerta: El servidor devolvió código $HTTP_STATUS o no respondió a tiempo."
+            exit 1
+          fi
