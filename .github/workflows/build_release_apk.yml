@@ -74,12 +74,19 @@ jobs:
           cd movil
           chmod +x android/gradlew
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-          flutter build apk --release
+          flutter build apk --release --split-per-abi
 
-      - name: Prepare Binary Asset
+      - name: Prepare Binary Assets
         run: |
-          cp movil/build/app/outputs/flutter-apk/app-release.apk ./CEOS.apk
-          ls -lh ./CEOS.apk
+          cd movil/build/app/outputs/flutter-apk
+          # El APK arm64-v8a (teléfonos modernos) es el estándar ligero (~18 MB vs 61 MB)
+          cp app-arm64-v8a-release.apk ${{ github.workspace }}/CEOS.apk
+          cp app-arm64-v8a-release.apk ${{ github.workspace }}/CEOS-arm64.apk
+          if [ -f "app-armeabi-v7a-release.apk" ]; then
+            cp app-armeabi-v7a-release.apk ${{ github.workspace }}/CEOS-arm32.apk
+          fi
+          cd ${{ github.workspace }}
+          ls -lh CEOS*.apk
 
       - name: Determine Tag & Release Notes
         id: release_info
@@ -89,7 +96,7 @@ jobs:
             echo "notes=${{ github.event.inputs.release_notes }}" >> $GITHUB_OUTPUT
           else
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-            echo "notes=Actualización automática de CEOS Clínico (${GITHUB_REF#refs/tags/})." >> $GITHUB_OUTPUT
+            echo "notes=Actualización optimizada de CEOS Clínico (${GITHUB_REF#refs/tags/})." >> $GITHUB_OUTPUT
           fi
 
       - name: Publish GitHub Release
@@ -104,9 +111,12 @@ jobs:
 
             ---
             #### 📥 Descarga Directa:
-            - [Descargar CEOS.apk](https://github.com/JhersonVargas03/CEOS/releases/download/${{ steps.release_info.outputs.tag }}/CEOS.apk)
+            - **[Descargar CEOS.apk (Recomendado, ~18 MB)](https://github.com/JhersonVargas03/CEOS/releases/download/${{ steps.release_info.outputs.tag }}/CEOS.apk)**
+            - [Descargar para teléfonos antiguos (32-bit ARM)](https://github.com/JhersonVargas03/CEOS/releases/download/${{ steps.release_info.outputs.tag }}/CEOS-arm32.apk)
           files: |
             ./CEOS.apk
+            ./CEOS-arm64.apk
+            ./CEOS-arm32.apk
           draft: false
           prerelease: false
         env:
