@@ -56,8 +56,12 @@ COPY . .
 # Dar permisos de ejecución al entrypoint
 RUN chmod +x entrypoint.sh
 
-# Usuario no-root por seguridad
-RUN addgroup --system ceos && adduser --system --ingroup ceos ceos
+# Crear directorios para estáticos, media y caché de fuentes, y asignar permisos al usuario ceos
+RUN addgroup --system ceos && adduser --system --ingroup ceos --home /home/ceos ceos \
+    && mkdir -p /app/staticfiles /app/media /home/ceos/.cache/fontconfig \
+    && chown -R ceos:ceos /app /home/ceos
+
+ENV HOME=/home/ceos
 USER ceos
 
 EXPOSE 8000

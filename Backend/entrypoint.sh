@@ -28,8 +28,8 @@ username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
 if not User.objects.filter(username=username).exists():
     User.objects.create_superuser(
         username=username,
-        email=os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@clinica.com'),
-        password=os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'Admin1234!'),
+        correo_interno=os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@clinica.com'),
+        password=os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'CeosAdmin2026!'),
     )
     print(f'Superusuario \"{username}\" creado exitosamente.')
 else:
