@@ -56,7 +56,8 @@ jobs:
         run: |
           cd movil
           chmod +x android/gradlew
-          flutter build apk --release
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          flutter build apk --release --verbose
 
       - name: Prepare Binary Asset
         run: |
