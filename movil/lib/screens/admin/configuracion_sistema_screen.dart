@@ -7,6 +7,7 @@ import '../../core/theme/ceos_theme.dart';
 import '../../models/admin_models.dart';
 import '../../providers/permisos_provider.dart';
 import '../../providers/storage_provider.dart';
+import '../../core/services/app_update_service.dart';
 
 class ConfiguracionSistemaScreen extends ConsumerStatefulWidget {
   const ConfiguracionSistemaScreen({super.key});
@@ -266,6 +267,42 @@ class _ConfiguracionSistemaScreenState extends ConsumerState<ConfiguracionSistem
                     style: CeosTheme.body(fontSize: 12, color: CeosColors.lightTextMuted),
                   ),
                   onChanged: _toggleAlertas,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              Text(
+                'Actualizaciones de la Aplicación',
+                style: CeosTheme.heading(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Comprueba si existe una versión más reciente de CEOS disponible para instalar.',
+                style: CeosTheme.body(fontSize: 12, color: CeosColors.lightTextSecondary),
+              ),
+              const SizedBox(height: 14),
+
+              Card(
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: CeosColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.system_update_rounded, color: CeosColors.primary),
+                  ),
+                  title: Text(
+                    'Versión de la App: v${AppUpdateService.currentVersion}',
+                    style: CeosTheme.heading(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'Toca para comprobar actualizaciones en el servidor',
+                    style: CeosTheme.body(fontSize: 12, color: CeosColors.lightTextMuted),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => AppUpdateService.checkForUpdates(context, showNoUpdateMessage: true),
                 ),
               ),
             ],

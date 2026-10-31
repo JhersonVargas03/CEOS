@@ -15,6 +15,7 @@ import '../../widgets/item_actividad_reciente.dart';
 import '../../widgets/selector_area.dart';
 import '../../widgets/skeleton_home.dart';
 import '../../widgets/tarjeta_alerta.dart';
+import '../../core/services/app_update_service.dart';
 
 // ── Modelo interno para grupo de acciones rápidas ──────────────────────────
 class _GrupoAcciones {
@@ -144,11 +145,26 @@ class _SeccionAcciones extends StatelessWidget {
 }
 
 // ── Pantalla principal ──────────────────────────────────────────────────────
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        AppUpdateService.checkForUpdates(context);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final permisosAsync = ref.watch(permisosEfectivosProvider);
     final esSuperadmin = ref.watch(esSuperadminProvider);
