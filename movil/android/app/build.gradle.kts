@@ -7,37 +7,6 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// ── Signing configuration ──────────────────────────────────────────────────────
-// Priority: Environment variables (CI/CD) > keystore.properties (local dev)
-val keystoreFile: File?
-val keystorePassword: String?
-val keyAlias: String?
-val keyPassword: String?
-
-val envKeystore = System.getenv("ANDROID_KEYSTORE_PATH")
-if (envKeystore != null) {
-    // Running in GitHub Actions – keystore written from secret
-    keystoreFile = file(envKeystore)
-    keystorePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
-    keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "ceos"
-    keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
-} else {
-    // Local development – read from keystore.properties (not committed)
-    val propsFile = rootProject.file("keystore.properties")
-    if (propsFile.exists()) {
-        val props = Properties().apply { load(propsFile.inputStream()) }
-        keystoreFile = file(props.getProperty("storeFile") ?: "")
-        keystorePassword = props.getProperty("storePassword")
-        keyAlias = props.getProperty("keyAlias")
-        keyPassword = props.getProperty("keyPassword")
-    } else {
-        keystoreFile = null
-        keystorePassword = null
-        keyAlias = null
-        keyPassword = null
-    }
-}
-
 android {
     namespace = "com.ceos.app.ceos_app"
     compileSdk = flutter.compileSdkVersion
@@ -60,21 +29,38 @@ android {
         versionName = flutter.versionName
     }
 
+    // ── Signing configuration ─────────────────────────────────────────────────
+    // CI/CD (GitHub Actions): reads from environment variables
+    // Local dev: reads from android/key.properties  (not committed to git)
+    // Fallback: uses debug keystore (only for local `flutter run --release`)
     signingConfigs {
-        if (keystoreFile != null && keystoreFile.exists()) {
+        val envKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+        val localKeyProps = rootProject.file("key.properties")
+
+        if (envKeystorePath != null) {
+            // ── GitHub Actions path ──────────────────────────────────────────
             create("release") {
-                storeFile = keystoreFile
-                storePassword = keystorePassword
-                this.keyAlias = keyAlias
-                this.keyPassword = keyPassword
+                storeFile = file(envKeystorePath)
+                storePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "ceos"
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+            }
+        } else if (localKeyProps.exists()) {
+            // ── Local development path ───────────────────────────────────────
+            val props = Properties().apply { load(localKeyProps.inputStream()) }
+            create("release") {
+                storeFile = file(props.getProperty("storeFile", ""))
+                storePassword = props.getProperty("storePassword", "")
+                keyAlias = props.getProperty("keyAlias", "")
+                keyPassword = props.getProperty("keyPassword", "")
             }
         }
+        // If neither is present, no "release" config is created → falls back to debug below
     }
 
     buildTypes {
         release {
-            val hasSigning = keystoreFile != null && keystoreFile.exists()
-            signingConfig = if (hasSigning) {
+            signingConfig = if (signingConfigs.findByName("release") != null) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
