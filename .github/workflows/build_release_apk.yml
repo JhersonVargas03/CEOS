@@ -55,6 +55,7 @@ jobs:
       - name: Build Release APK
         run: |
           cd movil
+          chmod +x android/gradlew
           flutter build apk --release
 
       - name: Prepare Binary Asset
