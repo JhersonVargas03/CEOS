@@ -27,10 +27,14 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.NOTICE(f"2. Configurando superusuario '{username}' ({email})..."))
 
-        usuario = Usuario.objects.filter(username=username).first()
+        usuario = Usuario.objects.filter(username__iexact=username).first()
+        if not usuario:
+            usuario = Usuario.objects.filter(correo_interno__iexact=email).first()
+
         rol_superadmin = Rol.objects.filter(es_superadmin=True).first()
 
         if usuario:
+            usuario.username = username
             usuario.correo_interno = email
             usuario.set_password(password)
             usuario.activo = True
@@ -40,16 +44,20 @@ class Command(BaseCommand):
             usuario.intentos_fallidos = 0
             usuario.bloqueado_hasta = None
             usuario.save()
-            self.stdout.write(self.style.SUCCESS(f"✓ Superusuario '{username}' ya existía. Contraseña y credenciales actualizadas."))
+            self.stdout.write(self.style.SUCCESS(f"✓ Superusuario '{username}' ({email}) actualizado exitosamente."))
         else:
-            usuario = Usuario.objects.create_superuser(
-                username=username,
-                correo_interno=email,
-                password=password,
-                telefono='+59170000000',
-                primer_login_completado=True
-            )
-            self.stdout.write(self.style.SUCCESS(f"✓ Superusuario '{username}' creado exitosamente."))
+            try:
+                usuario = Usuario.objects.create_superuser(
+                    username=username,
+                    correo_interno=email,
+                    password=password,
+                    telefono='+59170000000',
+                    primer_login_completado=True
+                )
+                self.stdout.write(self.style.SUCCESS(f"✓ Superusuario '{username}' creado exitosamente."))
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"⚠ Aviso al crear superusuario: {e}"))
+                usuario = Usuario.objects.filter(correo_interno__iexact=email).first()
 
         if rol_superadmin:
             UsuarioRol.objects.get_or_create(usuario=usuario, rol=rol_superadmin)

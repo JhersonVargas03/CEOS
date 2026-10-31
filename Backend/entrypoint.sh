@@ -20,7 +20,7 @@ python manage.py collectstatic --noinput --clear
 
 # 3. Inicializar roles, permisos y superusuario
 echo "▶ Inicializando roles, permisos y superusuario..."
-python manage.py init_superuser
+python manage.py init_superuser || echo "⚠ Advertencia: init_superuser completado con avisos."
 
 echo "──────────────────────────────────────────"
 echo "  ✓ Inicialización completada"
