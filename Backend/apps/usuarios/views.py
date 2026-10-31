@@ -10,6 +10,7 @@ from django.core.cache import cache
 from django.conf import settings
 from datetime import timedelta
 import secrets, string, urllib.request, urllib.parse, json
+from .telegram_service import TelegramBotService
 
 from .models import (
     Usuario, Rol, Permiso, UsuarioRol, RolPermiso, CodigoRecuperacion,
@@ -508,118 +509,85 @@ class PrimerLoginVincularTelegramView(APIView):
 
 
 class TelegramWebhookView(APIView):
+    """
+    Endpoint receptor de updates de Telegram (modo Webhook).
+    Telegram enviará un POST a esta URL cada vez que alguien escriba al bot.
+    POST /api/telegram/webhook
+    """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        # Verificar secret_token para autenticar que el request viene de Telegram
+        secret_header = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+        expected_secret = TelegramBotService.get_secret()
+        if expected_secret and secret_header != expected_secret:
+            # Rechazamos silenciosamente (no revelar información al atacante)
+            return Response({'status': 'ignored'}, status=status.HTTP_200_OK)
+
         data = request.data
         message = data.get('message', {})
         text = message.get('text', '')
         chat_id = message.get('chat', {}).get('id')
+        from_user = message.get('from', {})
 
-        if text.startswith('/start ') and chat_id:
-            token = text.split('/start ')[1].strip()
-            usuario = Usuario.objects.filter(telegram_token_vinculacion=token).first()
-            if usuario:
-                usuario.telegram_chat_id = str(chat_id)
-                usuario.telegram_vinculado = True
-                usuario.telegram_token_vinculacion = None
-                usuario.save()
-                AuditService.registrar_accion(usuario, 'TELEGRAM_VINCULADO', {'chat_id': str(chat_id)})
-                NotificationService.enviar_mensaje(usuario, "¡Su cuenta de Telegram ha sido vinculada exitosamente al sistema CEOS!")
-                return Response({'status': 'ok', 'mensaje': 'Cuenta vinculada exitosamente'}, status=status.HTTP_200_OK)
-
-        return Response({'status': 'ignored'}, status=status.HTTP_200_OK)
-
-
-def _procesar_telegram_updates(usuario_solicitante=None):
-    """
-    Función auxiliar que consulta getUpdates de Telegram y procesa los mensajes de vinculación.
-    Útil en desarrollo local donde el webhook no es accesible públicamente.
-    Retorna un dict con el resumen de actualizaciones procesadas.
-    """
-    token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
-    if not token:
-        return {'error': 'TELEGRAM_BOT_TOKEN no configurado', 'vinculados': 0}
-
-    url = f"https://api.telegram.org/bot{token}/getUpdates"
-    try:
-        req = urllib.request.Request(url, method='GET')
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-    except Exception as e:
-        return {'error': f'No se pudo contactar a Telegram: {e}', 'vinculados': 0}
-
-    if not data.get('ok'):
-        return {'error': 'Respuesta no OK de Telegram', 'vinculados': 0}
-
-    vinculados = 0
-    ignorados = 0
-    max_update_id = None
-
-    for update in data.get('result', []):
-        update_id = update.get('update_id')
-        if max_update_id is None or update_id > max_update_id:
-            max_update_id = update_id
-
-        message = update.get('message', {})
-        text = message.get('text', '').strip()
-        chat_id = message.get('chat', {}).get('id')
-
-        if not chat_id:
-            continue
-
-        usuario = None
-        if text.startswith('/start '):
-            token_vincular = text.split('/start ', 1)[1].strip()
-            usuario = Usuario.objects.filter(telegram_token_vinculacion=token_vincular).first()
-
-        # Fallback: si el usuario envió solo /start, /star o cualquier texto al bot
-        if not usuario:
-            if usuario_solicitante and not usuario_solicitante.telegram_vinculado:
-                usuario = usuario_solicitante
-            else:
-                pendientes = list(Usuario.objects.filter(telegram_vinculado=False, telegram_token_vinculacion__isnull=False))
-                if len(pendientes) == 1:
-                    usuario = pendientes[0]
-
-        if usuario and not usuario.telegram_vinculado:
-            usuario.telegram_chat_id = str(chat_id)
-            usuario.telegram_vinculado = True
-            usuario.telegram_token_vinculacion = None
-            usuario.save()
-            AuditService.registrar_accion(usuario, 'TELEGRAM_VINCULADO', {'chat_id': str(chat_id)})
-            NotificationService.enviar_mensaje(usuario, "¡Su cuenta de Telegram ha sido vinculada exitosamente al sistema CEOS!")
-            vinculados += 1
-        else:
-            ignorados += 1
-
-    # Marcar los updates como procesados en Telegram (offset = último id + 1)
-    if max_update_id is not None:
-        confirm_url = f"https://api.telegram.org/bot{token}/getUpdates"
-        payload = json.dumps({'offset': max_update_id + 1}).encode('utf-8')
-        try:
-            req2 = urllib.request.Request(confirm_url, data=payload,
-                                          headers={'Content-Type': 'application/json'}, method='POST')
-            urllib.request.urlopen(req2, timeout=5)
-        except Exception:
-            pass  # Si falla el ack, no es crítico
-
-    return {'vinculados': vinculados, 'ignorados': ignorados, 'updates_procesados': len(data.get('result', []))}
+        result = TelegramBotService.procesar_mensaje(chat_id, text, from_user=from_user)
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class TelegramProcesarUpdatesView(APIView):
     """
-    Endpoint de uso exclusivo en desarrollo local cuando no hay webhook.
-    Llama a getUpdates de Telegram y procesa vinculaciones de cuentas pendientes.
+    Endpoint para procesar updates manualmente (polling manual para desarrollo local).
+    Solo funciona cuando NO hay webhook activo en Telegram.
     POST /api/telegram/procesar-updates
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        resultado = _procesar_telegram_updates(usuario_solicitante=request.user)
+        resultado = TelegramBotService.procesar_updates_polling(
+            usuario_solicitante=request.user
+        )
         if 'error' in resultado:
             return Response(resultado, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response(resultado, status=status.HTTP_200_OK)
+
+
+class TelegramWebhookAdminView(APIView):
+    """
+    Endpoint de administración para configurar/consultar/eliminar el webhook de Telegram.
+    Solo accesible para Superadmins.
+    GET  /api/telegram/admin/webhook  -> Estado actual del webhook
+    POST /api/telegram/admin/webhook  -> Configurar webhook con URL del cuerpo o la de producción
+    DELETE /api/telegram/admin/webhook -> Eliminar webhook (cambiar a modo polling)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _check_superadmin(self, request):
+        user = request.user
+        return (
+            getattr(user, 'is_superuser', False)
+            or getattr(user, 'es_superadmin', False)
+            or (hasattr(user, 'roles') and user.roles.filter(es_superadmin=True).exists())
+        )
+
+    def get(self, request):
+        if not self._check_superadmin(request):
+            return Response({'error': 'Acceso denegado'}, status=status.HTTP_403_FORBIDDEN)
+        info = TelegramBotService.obtener_info_webhook()
+        return Response(info)
+
+    def post(self, request):
+        if not self._check_superadmin(request):
+            return Response({'error': 'Acceso denegado'}, status=status.HTTP_403_FORBIDDEN)
+        webhook_url = request.data.get('url') or TelegramBotService.DEFAULT_WEBHOOK_URL
+        resultado = TelegramBotService.configurar_webhook(webhook_url)
+        return Response(resultado)
+
+    def delete(self, request):
+        if not self._check_superadmin(request):
+            return Response({'error': 'Acceso denegado'}, status=status.HTTP_403_FORBIDDEN)
+        drop_pending = request.data.get('drop_pending_updates', False)
+        resultado = TelegramBotService.eliminar_webhook(drop_pending_updates=drop_pending)
+        return Response(resultado)
 
 
 class PrimerLoginEnviarOtpView(APIView):

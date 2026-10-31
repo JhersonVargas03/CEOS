@@ -4,7 +4,7 @@ from .views import (
     PermisoListView, RolListCreateView, RolDetailView, UsuarioRolesUpdateView,
     UsuarioAdminListCreateView, UsuarioAdminDetailUpdateView, UsuarioAdminEstadoView,
     PrimerLoginCambiarPasswordView, PrimerLoginVincularTelegramView, TelegramWebhookView,
-    TelegramProcesarUpdatesView,
+    TelegramProcesarUpdatesView, TelegramWebhookAdminView,
     PrimerLoginEnviarOtpView, PrimerLoginConfirmarOtpView, PrimerLoginFinalizarView,
     SolicitarRecuperacionView, VerificarCodigoRecuperacionView, NuevaPasswordRecuperacionView
 )
@@ -33,6 +33,7 @@ urlpatterns = [
     path('auth/primer-login/vincular-telegram', PrimerLoginVincularTelegramView.as_view(), name='primer_login_vincular_telegram'),
     path('telegram/webhook', TelegramWebhookView.as_view(), name='telegram_webhook'),
     path('telegram/procesar-updates', TelegramProcesarUpdatesView.as_view(), name='telegram_procesar_updates'),
+    path('telegram/admin/webhook', TelegramWebhookAdminView.as_view(), name='telegram_admin_webhook'),
     path('auth/primer-login/enviar-otp-telefono', PrimerLoginEnviarOtpView.as_view(), name='primer_login_enviar_otp'),
     path('auth/primer-login/confirmar-telefono', PrimerLoginConfirmarOtpView.as_view(), name='primer_login_confirmar_otp'),
     path('auth/primer-login/finalizar', PrimerLoginFinalizarView.as_view(), name='primer_login_finalizar'),
