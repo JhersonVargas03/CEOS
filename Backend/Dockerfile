@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libcairo2 \
         libpango-1.0-0 \
         libpangocairo-1.0-0 \
-        libgdk-pixbuf2.0-0 \
+        libgdk-pixbuf-2.0-0 \
         libffi-dev \
         shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
@@ -42,7 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libcairo2 \
         libpango-1.0-0 \
         libpangocairo-1.0-0 \
-        libgdk-pixbuf2.0-0 \
+        libgdk-pixbuf-2.0-0 \
         shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
@@ -64,11 +64,6 @@ EXPOSE 8000
 
 ENTRYPOINT ["./entrypoint.sh"]
 
-# Gunicorn: ajusta --workers según RAM disponible en Koyeb (1 vCPU → 2-3 workers)
-CMD ["gunicorn", "config.wsgi:application", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "2", \
-     "--timeout", "120", \
-     "--log-level", "info", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-"]
+# Gunicorn dinámico (soporta $PORT de Render/Koyeb o 8000 por defecto)
+CMD ["sh", "-c", "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --log-level info --access-logfile - --error-logfile -"]
+
