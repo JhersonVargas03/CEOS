@@ -133,6 +133,10 @@ class _AmbientGlowPainter extends CustomPainter {
   final bool conInferior;
   final bool conBurbujas;
 
+  /// Reloj continuo global para que las burbujas y orbes ambientales
+  /// continúen su trayectoria fluida ininterrumpida sin reiniciar a 0 al cambiar de vista.
+  static final Stopwatch _globalClock = Stopwatch()..start();
+
   _AmbientGlowPainter({
     required this.animation,
     required this.isDark,
@@ -145,8 +149,10 @@ class _AmbientGlowPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
 
-    final t = animation.value;
-    final angle = t * 2 * math.pi;
+    // Tiempo continuo absoluto en segundos (ciclo suave de 16.0 segundos)
+    final double elapsedSec = _globalClock.elapsedMilliseconds / 1000.0;
+    final double t = (elapsedSec % 16.0) / 16.0;
+    final double angle = t * 2 * math.pi;
     final rect = Offset.zero & size;
 
     // --- 1. ORBES AMBIENTALES DINÁMICOS (Resplandor Aurora en movimiento continuo) ---

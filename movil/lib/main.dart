@@ -38,6 +38,7 @@ class CeosApp extends ConsumerWidget {
       themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) => FondoAmbiental(
+        key: const ValueKey('ceos_global_fondo_ambiental'),
         child: child ?? const SizedBox.shrink(),
       ),
     );

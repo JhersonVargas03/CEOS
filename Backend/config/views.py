@@ -41,17 +41,17 @@ def app_version_check(request):
     Permite a los dispositivos móviles consultar la versión vigente del APK,
     las novedades de la versión y la URL de descarga directa desde GitHub Releases.
     """
-    version_actual = os.environ.get("APP_CURRENT_VERSION", "1.0.0")
-    version_minima = os.environ.get("APP_MIN_VERSION", "1.0.0")
+    version_actual = os.environ.get("APP_CURRENT_VERSION", "1.0.4")
+    version_minima = os.environ.get("APP_MIN_VERSION", "1.0.4")
     url_descarga = os.environ.get(
         "APP_DOWNLOAD_URL",
         "https://github.com/JhersonVargas03/CEOS/releases/latest/download/CEOS.apk"
     )
     notas = os.environ.get(
         "APP_RELEASE_NOTES",
-        "Mejoras de rendimiento, estabilidad general y actualización de funciones."
+        "Animación ambiental fluida sin cortes entre vistas y mejoras de estabilidad general."
     )
-    obligatoria = os.environ.get("APP_UPDATE_MANDATORY", "false").lower() in ("true", "1", "yes")
+    obligatoria = os.environ.get("APP_UPDATE_MANDATORY", "true").lower() in ("true", "1", "yes")
 
     return JsonResponse({
         "version_actual": version_actual,
