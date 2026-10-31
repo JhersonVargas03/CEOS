@@ -18,23 +18,9 @@ python manage.py migrate --noinput
 echo "▶ Recolectando archivos estáticos..."
 python manage.py collectstatic --noinput --clear
 
-# 3. Crear superusuario inicial (solo si no existe)
-echo "▶ Verificando superusuario..."
-python manage.py shell -c "
-from django.contrib.auth import get_user_model
-import os
-User = get_user_model()
-username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
-if not User.objects.filter(username=username).exists():
-    User.objects.create_superuser(
-        username=username,
-        correo_interno=os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@clinica.com'),
-        password=os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'CeosAdmin2026!'),
-    )
-    print(f'Superusuario \"{username}\" creado exitosamente.')
-else:
-    print(f'Superusuario \"{username}\" ya existe, omitiendo.')
-"
+# 3. Inicializar roles, permisos y superusuario
+echo "▶ Inicializando roles, permisos y superusuario..."
+python manage.py init_superuser
 
 echo "──────────────────────────────────────────"
 echo "  ✓ Inicialización completada"
