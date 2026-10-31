@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../core/services/app_update_service.dart';
 import '../../core/theme/ceos_colors.dart';
 import '../../core/theme/ceos_theme.dart';
 import '../../models/item_navegacion.dart';
@@ -291,6 +292,49 @@ class AdministracionScreen extends ConsumerWidget {
                   );
                 },
               ),
+              const SizedBox(height: 24),
+              Center(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => AppUpdateService.checkForUpdates(context, showNoUpdateMessage: true),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              PhosphorIconsRegular.sparkle,
+                              size: 14,
+                              color: CeosColors.areaOdontologia,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'CEOS Clínico v${AppUpdateService.currentVersion}',
+                              style: CeosTheme.heading(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: CeosColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Toca para comprobar actualizaciones',
+                          style: CeosTheme.body(
+                            fontSize: 11,
+                            color: CeosColors.lightTextMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

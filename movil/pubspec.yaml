@@ -1,7 +1,7 @@
 name: ceos_app
 description: "CEOS — App móvil de gestión para clínica dental (Usuarios, Inventario, Backup)."
 publish_to: 'none'
-version: 1.0.4+2
+version: 1.0.5+3
 
 environment:
   sdk: '>=3.4.0 <4.0.0'

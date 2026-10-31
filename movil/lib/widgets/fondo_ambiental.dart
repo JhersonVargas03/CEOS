@@ -300,22 +300,20 @@ class _AmbientGlowPainter extends CustomPainter {
 
         canvas.drawCircle(center, r, fillPaint);
 
-        // Anillo de contorno de vidrio fino (Luminous Rim) atenuado por edgeFade
-        final borderAlpha = (isDark ? 0.22 : 0.16) * edgeFade;
+        // Anillo de contorno de vidrio fino (Luminous Rim) ultra-liviano GPU
+        final borderAlpha = (isDark ? 0.24 : 0.18) * edgeFade;
         final strokePaint = Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0
-          ..shader = SweepGradient(
-            startAngle: 0.0,
-            endAngle: math.pi * 2,
+          ..shader = LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
+              Colors.white.withValues(alpha: (isDark ? 0.35 : 0.28) * edgeFade),
               mainColor.withValues(alpha: borderAlpha),
-              Colors.white.withValues(alpha: (isDark ? 0.35 : 0.25) * edgeFade),
               mainColor.withValues(alpha: borderAlpha * 0.3),
-              mainColor.withValues(alpha: borderAlpha),
             ],
-            stops: const [0.0, 0.4, 0.7, 1.0],
-            transform: GradientRotation(angle + spec.phase),
+            stops: const [0.0, 0.5, 1.0],
           ).createShader(Rect.fromCircle(center: center, radius: r));
 
         canvas.drawCircle(center, r, strokePaint);

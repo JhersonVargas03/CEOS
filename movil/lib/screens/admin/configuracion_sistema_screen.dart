@@ -114,6 +114,29 @@ class _ConfiguracionSistemaScreenState extends ConsumerState<ConfiguracionSistem
                   style: CeosTheme.body(color: CeosColors.lightTextSecondary),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 28),
+                Card(
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: CeosColors.areaOdontologia.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.system_update_rounded, color: CeosColors.areaOdontologia),
+                    ),
+                    title: Text(
+                      'Versión de la App: v${AppUpdateService.currentVersion}',
+                      style: CeosTheme.heading(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      'Toca para comprobar actualizaciones en el servidor',
+                      style: CeosTheme.body(fontSize: 12, color: CeosColors.lightTextMuted),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => AppUpdateService.checkForUpdates(context, showNoUpdateMessage: true),
+                  ),
+                ),
               ],
             ),
           ),

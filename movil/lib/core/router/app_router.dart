@@ -52,6 +52,60 @@ final routerNotifierProvider = Provider<RouterNotifier>((ref) {
   return RouterNotifier(ref);
 });
 
+/// Transición FadeForwards transparente nativa:
+/// 1. La vista saliente se desvanece de inmediato (0% a 25% del tiempo) para que NUNCA se sobrepongan textos.
+/// 2. La nueva vista se eleva suavemente hacia arriba con fade in (del 20% al 100%).
+/// 3. opaque: false garantiza que Flutter NUNCA tape el fondo ni reinicie las burbujas animadas.
+Page<dynamic> _buildFadeForwardsPage({required LocalKey key, required Widget child}) {
+  return CustomTransitionPage<void>(
+    key: key,
+    child: child,
+    opaque: false,
+    transitionDuration: const Duration(milliseconds: 220),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final fadeIn = CurvedAnimation(
+        parent: animation,
+        curve: const Interval(0.20, 1.0, curve: Curves.easeOutCubic),
+      );
+      final slideIn = Tween<Offset>(
+        begin: const Offset(0.0, 0.04),
+        end: Offset.zero,
+      ).animate(fadeIn);
+
+      final fadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
+        CurvedAnimation(
+          parent: secondaryAnimation,
+          curve: const Interval(0.0, 0.25, curve: Curves.easeIn),
+        ),
+      );
+      final slideOut = Tween<Offset>(
+        begin: Offset.zero,
+        end: const Offset(0.0, -0.02),
+      ).animate(
+        CurvedAnimation(
+          parent: secondaryAnimation,
+          curve: const Interval(0.0, 0.25, curve: Curves.easeIn),
+        ),
+      );
+
+      return SlideTransition(
+        position: slideOut,
+        child: FadeTransition(
+          opacity: fadeOut,
+          child: SlideTransition(
+            position: slideIn,
+            child: FadeTransition(
+              opacity: fadeIn,
+              child: child,
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(routerNotifierProvider);
 
@@ -122,29 +176,44 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (context, state) => const HomeScreen(),
+            pageBuilder: (context, state) => _buildFadeForwardsPage(
+              key: state.pageKey,
+              child: const HomeScreen(),
+            ),
           ),
           GoRoute(
             path: '/inventario',
-            builder: (context, state) => const ListaMaterialesScreen(),
+            pageBuilder: (context, state) => _buildFadeForwardsPage(
+              key: state.pageKey,
+              child: const ListaMaterialesScreen(),
+            ),
           ),
           GoRoute(
             path: '/inventario/entrada',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final matId = int.tryParse(state.uri.queryParameters['materialId'] ?? '');
-              return NuevaEntradaScreen(initialMaterialId: matId);
+              return _buildFadeForwardsPage(
+                key: state.pageKey,
+                child: NuevaEntradaScreen(initialMaterialId: matId),
+              );
             },
           ),
           GoRoute(
             path: '/inventario/salida',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final matId = int.tryParse(state.uri.queryParameters['materialId'] ?? '');
-              return NuevaSalidaScreen(initialMaterialId: matId);
+              return _buildFadeForwardsPage(
+                key: state.pageKey,
+                child: NuevaSalidaScreen(initialMaterialId: matId),
+              );
             },
           ),
           GoRoute(
             path: '/inventario/solicitudes',
-            builder: (context, state) => const MisSolicitudesScreen(),
+            pageBuilder: (context, state) => _buildFadeForwardsPage(
+              key: state.pageKey,
+              child: const MisSolicitudesScreen(),
+            ),
           ),
         ],
       ),

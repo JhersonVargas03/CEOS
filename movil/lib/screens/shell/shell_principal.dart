@@ -64,7 +64,9 @@ class ShellPrincipal extends ConsumerWidget {
                   currentIndex: currentIndex.clamp(0, visibleNavItems.length - 1),
                   onTap: (index) {
                     final targetRoute = visibleNavItems[index].route;
-                    context.go(targetRoute);
+                    if (targetRoute != currentLoc) {
+                      context.go(targetRoute);
+                    }
                   },
                   items: visibleNavItems.map((item) {
                     return BottomNavigationBarItem(
