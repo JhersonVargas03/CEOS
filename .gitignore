@@ -102,6 +102,7 @@ movil/android/app/release/
 movil/android/.gradle/
 movil/android/local.properties
 movil/android/**/generated/
+*.apk
 
 movil/linux/flutter/ephemeral/
 movil/windows/flutter/ephemeral/
