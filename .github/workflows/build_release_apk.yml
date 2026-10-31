@@ -22,14 +22,14 @@ jobs:
   build-apk:
     name: Build & Release CEOS.apk
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -52,7 +52,17 @@ jobs:
           cd movil
           flutter test --reporter expanded
 
+      - name: Decode Keystore from Secret
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/ceos-release.jks
+          echo "Keystore size: $(ls -lh ${{ github.workspace }}/ceos-release.jks)"
+
       - name: Build Release APK
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/ceos-release.jks
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd movil
           chmod +x android/gradlew
@@ -82,9 +92,9 @@ jobs:
           name: CEOS ${{ steps.release_info.outputs.tag }}
           body: |
             ### 📱 CEOS Clínico — Actualización
-            
+
             ${{ steps.release_info.outputs.notes }}
-            
+
             ---
             #### 📥 Descarga Directa:
             - [Descargar CEOS.apk](https://github.com/JhersonVargas03/CEOS/releases/download/${{ steps.release_info.outputs.tag }}/CEOS.apk)
@@ -94,3 +104,4 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

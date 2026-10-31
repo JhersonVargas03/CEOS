@@ -1,8 +1,41 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// ── Signing configuration ──────────────────────────────────────────────────────
+// Priority: Environment variables (CI/CD) > keystore.properties (local dev)
+val keystoreFile: File?
+val keystorePassword: String?
+val keyAlias: String?
+val keyPassword: String?
+
+val envKeystore = System.getenv("ANDROID_KEYSTORE_PATH")
+if (envKeystore != null) {
+    // Running in GitHub Actions – keystore written from secret
+    keystoreFile = file(envKeystore)
+    keystorePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
+    keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "ceos"
+    keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+} else {
+    // Local development – read from keystore.properties (not committed)
+    val propsFile = rootProject.file("keystore.properties")
+    if (propsFile.exists()) {
+        val props = Properties().apply { load(propsFile.inputStream()) }
+        keystoreFile = file(props.getProperty("storeFile") ?: "")
+        keystorePassword = props.getProperty("storePassword")
+        keyAlias = props.getProperty("keyAlias")
+        keyPassword = props.getProperty("keyPassword")
+    } else {
+        keystoreFile = null
+        keystorePassword = null
+        keyAlias = null
+        keyPassword = null
+    }
 }
 
 android {
@@ -20,21 +53,33 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.ceos.app.ceos_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (keystoreFile != null && keystoreFile.exists()) {
+            create("release") {
+                storeFile = keystoreFile
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            val hasSigning = keystoreFile != null && keystoreFile.exists()
+            signingConfig = if (hasSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            isMinifyEnabled = false
         }
     }
 }
@@ -42,3 +87,4 @@ android {
 flutter {
     source = "../.."
 }
+
