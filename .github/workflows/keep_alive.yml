@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Ping CEOS Backend Health Check
         env:
-          APP_URL: ${{ secrets.PROD_APP_URL || vars.PROD_APP_URL }}
+          APP_URL: ${{ secrets.PROD_APP_URL || vars.PROD_APP_URL || 'https://ceos-qb08.onrender.com' }}
         run: |
           if [ -z "$APP_URL" ]; then
             echo "⚠️ [AVISO]: La variable o secreto 'PROD_APP_URL' aún no está configurada en GitHub."
