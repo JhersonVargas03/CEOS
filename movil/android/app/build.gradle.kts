@@ -66,6 +66,7 @@ android {
                 signingConfigs.getByName("debug")
             }
             isMinifyEnabled = false
+            isShrinkResources = false  // shrinkResources requiere minifyEnabled; los desactivamos juntos
         }
     }
 }
