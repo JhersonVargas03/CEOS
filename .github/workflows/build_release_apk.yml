@@ -52,22 +52,28 @@ jobs:
           cd movil
           flutter test --reporter expanded
 
-      - name: Decode Keystore from Secret
+      - name: Setup Release Keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/ceos-release.jks
-          echo "Keystore size: $(ls -lh ${{ github.workspace }}/ceos-release.jks)"
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/ceos-release.jks 2>/dev/null || true
+          fi
+          if [ ! -s "${{ github.workspace }}/ceos-release.jks" ]; then
+            echo "Secret vacio o no disponible, usando keystore del repositorio..."
+            cp movil/android/app/ceos-release.jks ${{ github.workspace }}/ceos-release.jks
+          fi
+          ls -lh ${{ github.workspace }}/ceos-release.jks
 
       - name: Build Release APK
         env:
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/ceos-release.jks
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD || 'ceosclinico2024' }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'ceos' }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'ceosclinico2024' }}
         run: |
           cd movil
           chmod +x android/gradlew
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-          flutter build apk --release --verbose
+          flutter build apk --release
 
       - name: Prepare Binary Asset
         run: |

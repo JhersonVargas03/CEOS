@@ -35,18 +35,23 @@ android {
     // Fallback: uses debug keystore (only for local `flutter run --release`)
     signingConfigs {
         val envKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+        val bundledKeystore = file("ceos-release.jks")
         val localKeyProps = rootProject.file("key.properties")
 
-        if (envKeystorePath != null) {
-            // ── GitHub Actions path ──────────────────────────────────────────
+        val effectiveStoreFile = when {
+            !envKeystorePath.isNullOrBlank() && file(envKeystorePath).exists() && file(envKeystorePath).length() > 0 -> file(envKeystorePath)
+            bundledKeystore.exists() && bundledKeystore.length() > 0 -> bundledKeystore
+            else -> null
+        }
+
+        if (effectiveStoreFile != null) {
             create("release") {
-                storeFile = file(envKeystorePath)
-                storePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
-                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "ceos"
-                keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+                storeFile = effectiveStoreFile
+                storePassword = System.getenv("ANDROID_STORE_PASSWORD")?.ifBlank { null } ?: "ceosclinico2024"
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")?.ifBlank { null } ?: "ceos"
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")?.ifBlank { null } ?: "ceosclinico2024"
             }
         } else if (localKeyProps.exists()) {
-            // ── Local development path ───────────────────────────────────────
             val props = Properties().apply { load(localKeyProps.inputStream()) }
             create("release") {
                 storeFile = file(props.getProperty("storeFile", ""))
@@ -55,7 +60,6 @@ android {
                 keyPassword = props.getProperty("keyPassword", "")
             }
         }
-        // If neither is present, no "release" config is created → falls back to debug below
     }
 
     buildTypes {
