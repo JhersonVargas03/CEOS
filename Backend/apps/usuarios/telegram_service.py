@@ -179,7 +179,7 @@ class TelegramBotService:
                     f"🛡️ <b>ESTADO DE VINCULACIÓN CEOS</b>\n\n"
                     f"👤 <b>Usuario:</b> {usuario.username}\n"
                     f"🏷️ <b>Rol:</b> {roles_str}\n"
-                    f"📧 <b>Correo:</b> {usuario.email or usuario.correo_interno or 'No registrado'}\n"
+                    f"📧 <b>Correo:</b> {getattr(usuario, 'correo_interno', 'No registrado')}\n"
                     f"✅ <b>Estado:</b> Vinculado y Activo"
                 )
             else:

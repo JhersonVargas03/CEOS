@@ -49,7 +49,7 @@ if _raw_csrf:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_csrf.split(',') if o.strip()]
 
 # ─── Telegram Bot API ─────────────────────────────────────────────────────────
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '8877170293:AAGok6c8bQMhnFnLt-9FGOXUNwlpCRqVtn0')
 TELEGRAM_BOT_NAME = os.environ.get('TELEGRAM_BOT_NAME', 'Ceos_Clibot')
 TELEGRAM_WEBHOOK_SECRET = os.environ.get('TELEGRAM_WEBHOOK_SECRET', 'ceos_telegram_secret_token_key_2026')
 

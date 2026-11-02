@@ -25,7 +25,7 @@ from .serializers import (
 )
 from .tokens import generar_tokens_para_usuario
 from .permissions import TienePermiso
-from apps.notificaciones.services import NotificationService
+from apps.notificaciones.services import NotificationService, TelegramChannel
 from apps.auditoria.services import AuditService
 
 
@@ -517,11 +517,14 @@ class TelegramWebhookView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Verificar secret_token para autenticar que el request viene de Telegram
-        secret_header = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+        # Verificar secret_token si viene en el request
+        secret_header = (
+            request.headers.get('X-Telegram-Bot-Api-Secret-Token')
+            or request.headers.get('x-telegram-bot-api-secret-token')
+            or request.META.get('HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN')
+        )
         expected_secret = TelegramBotService.get_secret()
-        if expected_secret and secret_header != expected_secret:
-            # Rechazamos silenciosamente (no revelar información al atacante)
+        if expected_secret and secret_header and secret_header != expected_secret:
             return Response({'status': 'ignored'}, status=status.HTTP_200_OK)
 
         data = request.data
@@ -612,7 +615,16 @@ class PrimerLoginEnviarOtpView(APIView):
             return Response({'error': 'El usuario no tiene un número de teléfono configurado. Ingrese su número de 8 dígitos.'}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = usuario.generar_otp_telefono()
-        NotificationService.enviar_mensaje(usuario, f"CEOS - Su código de verificación es: {otp}")
+        mensaje_otp = (
+            f"🔐 <b>CÓDIGO DE VERIFICACIÓN CEOS</b>\n\n"
+            f"Tu código de seguridad para verificar el teléfono <b>{usuario.telefono}</b> es:\n\n"
+            f"👉 <code>{otp}</code> 👈\n\n"
+            f"⏱️ <i>Válido por 10 minutos. Ingrésalo en la app móvil CEOS para continuar.</i>"
+        )
+        NotificationService.enviar_mensaje(usuario, mensaje_otp)
+        if usuario.telegram_chat_id:
+            TelegramChannel.enviar_mensaje(usuario.telegram_chat_id, mensaje_otp)
+
         return Response({
             'mensaje': f'Código OTP de 6 dígitos enviado al teléfono {usuario.telefono}.',
             'telefono': usuario.telefono,
@@ -641,6 +653,14 @@ class PrimerLoginConfirmarOtpView(APIView):
         usuario.save()
 
         AuditService.registrar_accion(usuario, 'TELEFONO_VERIFICADO', request=request)
+
+        if usuario.telegram_chat_id:
+            TelegramChannel.enviar_mensaje(
+                usuario.telegram_chat_id,
+                f"✅ <b>¡Teléfono verificado exitosamente!</b>\n\n"
+                f"Tu número <b>{usuario.telefono}</b> ha sido vinculado y verificado en <b>CEOS Clínico</b>."
+            )
+
         return Response({'mensaje': 'Teléfono verificado exitosamente.'}, status=status.HTTP_200_OK)
 
 
