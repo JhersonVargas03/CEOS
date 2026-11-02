@@ -34,6 +34,8 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
   // Paso 2: Telegram
   String? _telegramLink;
   bool _telegramVinculado = false;
+  Timer? _pollingTimer;       // polling automático en Paso 2
+  bool _pollingActivo = false;
 
   // Paso 3: Teléfono y OTP
   final _telefonoController = TextEditingController();
@@ -48,6 +50,7 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
     _confirmPasswordController.dispose();
     _telefonoController.dispose();
     _timerReenvio?.cancel();
+    _pollingTimer?.cancel();
     super.dispose();
   }
 
@@ -112,6 +115,53 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
         _telegramVinculado = data['vinculado'] as bool? ?? false;
       });
     } catch (_) {}
+
+    // Iniciar polling automático en segundo plano
+    _iniciarPollingAutomatico();
+  }
+
+  /// Hace polling cada 4 segundos para detectar la vinculación automáticamente
+  /// en cuanto el usuario envía /start en Telegram.
+  void _iniciarPollingAutomatico() {
+    _pollingTimer?.cancel();
+    if (!mounted) return;
+    setState(() => _pollingActivo = true);
+
+    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
+      if (!mounted) {
+        _pollingTimer?.cancel();
+        return;
+      }
+      try {
+        final repo = ref.read(authRepositoryProvider);
+        // Llama al backend para procesar mensajes pendientes de Telegram
+        await repo.telegramProcesarUpdates();
+        // Verifica si ya quedó vinculado
+        final user = await repo.obtenerPerfil();
+        if (user.telegramVinculado && mounted) {
+          _pollingTimer?.cancel();
+          // Confirmar contraseña si está pendiente
+          if (_nuevaPassword != null && _nuevaPassword!.isNotEmpty) {
+            try {
+              await repo.primerLoginCambiarPassword(passwordNueva: _nuevaPassword!);
+            } catch (_) {}
+          }
+          setState(() {
+            _telegramVinculado = true;
+            _pollingActivo = false;
+            _pasoActual = 3;
+            _isLoading = false;
+          });
+        }
+      } catch (_) {
+        // Ignorar errores de red temporales durante el polling
+      }
+    });
+  }
+
+  void _detenerPolling() {
+    _pollingTimer?.cancel();
+    if (mounted) setState(() => _pollingActivo = false);
   }
 
 
@@ -123,18 +173,14 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
 
     try {
       final repo = ref.read(authRepositoryProvider);
-      // En desarrollo local sin webhook: procesar mensajes pendientes de Telegram primero
       await repo.telegramProcesarUpdates();
-      // Ahora verificar si ya quedó vinculado en el backend
       final user = await repo.obtenerPerfil();
       if (user.telegramVinculado) {
-        // La contraseña se cambia sólo cuando la vinculación a Telegram es confirmada
+        _detenerPolling();
         if (_nuevaPassword != null && _nuevaPassword!.isNotEmpty) {
           try {
             await repo.primerLoginCambiarPassword(passwordNueva: _nuevaPassword!);
-          } catch (_) {
-            // Continuar si ya se actualizó previamente
-          }
+          } catch (_) {}
         }
         setState(() {
           _telegramVinculado = true;
@@ -143,7 +189,7 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
         });
       } else {
         setState(() {
-          _errorMessage = 'Aún no detectamos la vinculación. Asegúrate de abrir el enlace del bot y enviar /start.';
+          _errorMessage = 'Aún no detectamos la vinculación. Abre el bot en Telegram y envía /start.';
           _isLoading = false;
         });
       }
@@ -372,14 +418,38 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Abre el bot @Ceos_Clibot en Telegram y presiona /start para vincular tu cuenta.',
+                'Toca el botón de abajo, luego presiona START en Telegram.',
                 style: CeosTheme.body(
                   fontSize: 13,
                   color: CeosColors.lightTextSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
-
+              // Indicador de espera automática
+              if (_pollingActivo) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: CeosColors.areaOdontologia,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Esperando vinculación automática...',
+                      style: CeosTheme.body(
+                        fontSize: 12,
+                        color: CeosColors.areaOdontologia,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
