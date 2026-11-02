@@ -272,12 +272,77 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
     }
   }
 
+  void _irAtras() {
+    _pollingTimer?.cancel();
+    setState(() {
+      _pollingActivo = false;
+      _errorMessage = null;
+      _pasoActual = _pasoActual - 1;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuración Inicial Obligatoria'),
+        title: const Text('Configuración Inicial'),
         automaticallyImplyLeading: false,
+        // Botón Atrás: solo visible cuando hay paso anterior
+        leading: _pasoActual > 1
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                tooltip: 'Volver al paso anterior',
+                onPressed: _irAtras,
+              )
+            : null,
+        actions: [
+          // Opción de cerrar sesión por si el usuario queda atrapado
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Opciones',
+            onSelected: (value) async {
+              if (value == 'logout') {
+                final confirmar = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Cerrar sesión'),
+                    content: const Text(
+                      '¿Seguro que deseas cerrar sesión? Tendrás que completar la configuración al volver a ingresar.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancelar'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Cerrar sesión',
+                            style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmar == true && mounted) {
+                  _pollingTimer?.cancel();
+                  await ref.read(authNotifierProvider.notifier).logout();
+                }
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 18, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Cerrar sesión',
+                        style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

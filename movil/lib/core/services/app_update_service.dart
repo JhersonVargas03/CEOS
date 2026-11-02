@@ -38,7 +38,7 @@ class AppUpdateService {
   AppUpdateService._();
 
   /// Versión actual instalada en el dispositivo
-  static const String currentVersion = '1.0.6';
+  static const String currentVersion = '1.0.7';
 
   static bool _checkingUpdate = false;
 
