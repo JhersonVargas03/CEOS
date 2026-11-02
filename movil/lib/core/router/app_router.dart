@@ -141,7 +141,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      if (authState.status == AuthStatus.authenticated && isAuthRoute) {
+      if (authState.status == AuthStatus.authenticated && (isAuthRoute || loc == '/primer-login')) {
         return '/home';
       }
 

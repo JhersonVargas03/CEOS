@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/theme/ceos_colors.dart';
@@ -259,16 +260,24 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
       final repo = ref.read(authRepositoryProvider);
       await repo.primerLoginConfirmarOtpTelefono(codigoOtp: _codigoOtp);
       await ref.read(authNotifierProvider.notifier).completeFirstLogin();
+      if (mounted) {
+        setState(() => _isLoading = false);
+        context.go('/home');
+      }
     } on AppException catch (e) {
-      setState(() {
-        _errorMessage = e.message;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.message;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 

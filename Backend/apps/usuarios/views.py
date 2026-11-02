@@ -621,9 +621,20 @@ class PrimerLoginEnviarOtpView(APIView):
             f"👉 <code>{otp}</code> 👈\n\n"
             f"⏱️ <i>Válido por 10 minutos. Ingrésalo en la app móvil CEOS para continuar.</i>"
         )
-        NotificationService.enviar_mensaje(usuario, mensaje_otp)
+
+        import threading
         if usuario.telegram_chat_id:
-            TelegramChannel.enviar_mensaje(usuario.telegram_chat_id, mensaje_otp)
+            threading.Thread(
+                target=TelegramChannel.enviar_mensaje,
+                args=(usuario.telegram_chat_id, mensaje_otp),
+                daemon=True
+            ).start()
+        else:
+            threading.Thread(
+                target=NotificationService.enviar_mensaje,
+                args=(usuario, mensaje_otp),
+                daemon=True
+            ).start()
 
         return Response({
             'mensaje': f'Código OTP de 6 dígitos enviado al teléfono {usuario.telefono}.',
@@ -655,11 +666,16 @@ class PrimerLoginConfirmarOtpView(APIView):
         AuditService.registrar_accion(usuario, 'TELEFONO_VERIFICADO', request=request)
 
         if usuario.telegram_chat_id:
-            TelegramChannel.enviar_mensaje(
-                usuario.telegram_chat_id,
-                f"✅ <b>¡Teléfono verificado exitosamente!</b>\n\n"
-                f"Tu número <b>{usuario.telefono}</b> ha sido vinculado y verificado en <b>CEOS Clínico</b>."
-            )
+            import threading
+            threading.Thread(
+                target=TelegramChannel.enviar_mensaje,
+                args=(
+                    usuario.telegram_chat_id,
+                    f"✅ <b>¡Teléfono verificado exitosamente!</b>\n\n"
+                    f"Tu número <b>{usuario.telefono}</b> ha sido vinculado y verificado en <b>CEOS Clínico</b>."
+                ),
+                daemon=True
+            ).start()
 
         return Response({'mensaje': 'Teléfono verificado exitosamente.'}, status=status.HTTP_200_OK)
 
