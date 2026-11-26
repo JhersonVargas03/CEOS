@@ -114,6 +114,12 @@ class _DetalleMaterialScreenState extends ConsumerState<DetalleMaterialScreen>
           orElse: () => false,
         );
 
+    final puedeGestionarCatalogo = esSuperadmin ||
+        permisosAsync.maybeWhen(
+          data: (p) => p.contains('gestionar_catalogo_inventario'),
+          orElse: () => false,
+        );
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Detalle de Material')),
@@ -155,6 +161,20 @@ class _DetalleMaterialScreenState extends ConsumerState<DetalleMaterialScreen>
           onPressed: () => context.canPop() ? context.pop() : context.go('/inventario'),
         ),
         title: Text(mat.nombre),
+        actions: [
+          if (puedeGestionarCatalogo)
+            IconButton(
+              icon: const Icon(PhosphorIconsRegular.pencilSimple),
+              tooltip: 'Editar material',
+              onPressed: () async {
+                await context.push(
+                  '/inventario/materiales/${mat.id}/editar',
+                  extra: mat,
+                );
+                if (mounted) _cargarDetalle();
+              },
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -321,9 +341,27 @@ class _DetalleMaterialScreenState extends ConsumerState<DetalleMaterialScreen>
   Widget _buildTabLotes() {
     if (_lotes.isEmpty) {
       return Center(
-        child: Text(
-          'No hay lotes registrados para este material.',
-          style: CeosTheme.body(color: CeosColors.lightTextMuted),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Este material aún no tiene stock registrado.',
+                textAlign: TextAlign.center,
+                style: CeosTheme.body(color: CeosColors.lightTextMuted),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await context.push('/inventario/entrada?materialId=${_material!.id}');
+                  if (mounted) _cargarDetalle();
+                },
+                icon: const Icon(PhosphorIconsRegular.plus),
+                label: const Text('Agregar stock ahora'),
+              ),
+            ],
+          ),
         ),
       );
     }

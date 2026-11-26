@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../core/theme/ceos_colors.dart';
 import '../../core/theme/ceos_theme.dart';
 import '../../providers/notificaciones_provider.dart';
@@ -131,7 +132,7 @@ class NotificacionesScreen extends ConsumerWidget {
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Error: $e')),
+                                      SnackBar(content: Text(AppException.friendlyMessage(e))),
                                     );
                                   }
                                 }
@@ -146,7 +147,7 @@ class NotificacionesScreen extends ConsumerWidget {
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: $e')),
+                                SnackBar(content: Text(AppException.friendlyMessage(e))),
                               );
                             }
                           }

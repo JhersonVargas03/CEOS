@@ -52,6 +52,13 @@ class SolicitudesPendientesScreen extends ConsumerWidget {
                         Text(
                           'Todas las peticiones del personal han sido atendidas.',
                           style: CeosTheme.body(color: CeosColors.lightTextSecondary),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: () => context.push('/inventario/todas-solicitudes'),
+                          icon: const Icon(PhosphorIconsRegular.clockCounterClockwise),
+                          label: const Text('Ver historial completo de solicitudes'),
                         ),
                       ],
                     ),

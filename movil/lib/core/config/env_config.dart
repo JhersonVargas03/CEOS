@@ -29,7 +29,7 @@ class EnvConfig {
     return _defaultLocalUrl;
   }
 
-  // 25 segundos para contemplar latencia móvil y cold starts
-  static const Duration connectTimeout = Duration(seconds: 25);
-  static const Duration receiveTimeout = Duration(seconds: 25);
+  // 45 segundos para contemplar latencia móvil y cold starts en la nube
+  static const Duration connectTimeout = Duration(seconds: 45);
+  static const Duration receiveTimeout = Duration(seconds: 45);
 }

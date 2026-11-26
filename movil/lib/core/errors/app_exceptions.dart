@@ -145,4 +145,25 @@ class AppException implements Exception {
       rawData: data,
     );
   }
+
+  /// Convierte cualquier excepción o error técnico en un mensaje claro para el usuario.
+  static String friendlyMessage(Object error, {String? fallback}) {
+    if (error is AppException) return error.message;
+    if (error is DioException) return AppException.fromDioError(error).message;
+    final raw = error.toString();
+    final lower = raw.toLowerCase();
+    if (lower.contains('socketexception') ||
+        lower.contains('connection') ||
+        lower.contains('network') ||
+        lower.contains('failed host lookup')) {
+      return 'Sin conexión con el servidor. Verifica tu internet e intenta nuevamente.';
+    }
+    if (lower.contains('timeout')) {
+      return 'El servidor tardó demasiado en responder. Intenta nuevamente en unos segundos.';
+    }
+    if (raw.startsWith('Exception: ')) {
+      return raw.replaceFirst('Exception: ', '');
+    }
+    return fallback ?? 'Ocurrió un problema inesperado. Por favor intenta de nuevo.';
+  }
 }

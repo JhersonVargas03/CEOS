@@ -65,7 +65,7 @@ class VistaRestringidaScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Tu cuenta ha sido desactivada. Puedes consultar tu historial de actividad y reportes personales.',
+                            'Tu cuenta ha sido desactivada temporalmente. Puedes consultar tu historial de actividad o comunicarte con el administrador de la clínica para reactivarla.',
                             style: CeosTheme.body(
                               fontSize: 12,
                               color: CeosColors.lightTextPrimary,

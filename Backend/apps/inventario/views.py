@@ -3,7 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction, models
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.usuarios.permissions import TienePermiso, obtener_permisos_efectivos
@@ -291,17 +292,31 @@ class MaterialListCreateView(APIView):
 
     def get(self, request):
         """T-204.1/T-204.2/T-204.3: Lista materiales con filtros y búsqueda (accesible por todos los usuarios autenticados)."""
-        qs = Material.objects.select_related('area', 'categoria').filter(activo=True)
+        qs = (
+            Material.objects.select_related('area', 'categoria')
+            .filter(activo=True)
+            .annotate(
+                stock_total_anotado=Coalesce(
+                    Sum('lotes__cantidad_disponible', filter=Q(lotes__cantidad_disponible__gt=0)),
+                    0,
+                )
+            )
+        )
 
         # T-204.2: Búsqueda parcial case-insensitive (soporta 'q' y 'search')
         q = request.query_params.get('q') or request.query_params.get('search')
         if q:
             qs = qs.filter(
                 Q(nombre__icontains=q) |
+                Q(codigo_barras__iexact=q.strip()) |
                 Q(descripcion__icontains=q) |
                 Q(area__nombre__icontains=q) |
                 Q(categoria__nombre__icontains=q)
             )
+
+        codigo_barras = request.query_params.get('codigo_barras')
+        if codigo_barras:
+            qs = qs.filter(codigo_barras__iexact=codigo_barras.strip())
 
         area_id = request.query_params.get('area_id')
         if area_id:
@@ -328,17 +343,35 @@ class MaterialListCreateView(APIView):
         area = get_object_or_404(Area, id=serializer.validated_data['area_id'], activo=True)
         categoria = get_object_or_404(CategoriaMaterial, id=serializer.validated_data['categoria_id'], activo=True)
         nombre = serializer.validated_data['nombre'].strip()
+        raw_codigo = serializer.validated_data.get('codigo_barras')
+        codigo_barras = raw_codigo.strip() if raw_codigo and raw_codigo.strip() else None
+
+        if codigo_barras:
+            mat_codigo = Material.objects.filter(codigo_barras__iexact=codigo_barras).first()
+            if mat_codigo:
+                return Response(
+                    {
+                        'error': 'Ya existe un material registrado con ese código de barras.',
+                        'material_existente': MaterialSerializer(mat_codigo).data,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         # T-203.3: Unicidad área + categoría + nombre
-        if Material.objects.filter(area=area, categoria=categoria, nombre__iexact=nombre).exists():
+        mat_existente = Material.objects.filter(area=area, categoria=categoria, nombre__iexact=nombre).first()
+        if mat_existente:
             return Response(
-                {'error': 'Ya existe un material con ese nombre en la misma área y categoría.'},
+                {
+                    'error': 'Ya existe un material con ese nombre en la misma área y categoría.',
+                    'material_existente': MaterialSerializer(mat_existente).data,
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         with transaction.atomic():
             material = Material.objects.create(
                 nombre=nombre,
+                codigo_barras=codigo_barras,
                 descripcion=serializer.validated_data.get('descripcion', ''),
                 area=area,
                 categoria=categoria,
@@ -349,14 +382,18 @@ class MaterialListCreateView(APIView):
 
             stock_inicial = serializer.validated_data.get('stock_inicial') or serializer.validated_data.get('cantidad_inicial') or 0
             if stock_inicial > 0:
-                codigo_lote = serializer.validated_data.get('codigo_lote') or f"LOT-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+                codigo_lote = (serializer.validated_data.get('codigo_lote') or '').strip() or f"LOT-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+                costo = serializer.validated_data.get('costo_unitario')
                 lote = Lote.objects.create(
                     material=material,
                     codigo_lote=codigo_lote,
                     cantidad_ingresada=stock_inicial,
                     cantidad_disponible=stock_inicial,
-                    costo=serializer.validated_data.get('costo_unitario'),
+                    costo=costo,
+                    costo_registrado=costo is not None,
                     fecha_caducidad=serializer.validated_data.get('fecha_caducidad'),
+                    fecha_alerta_vencimiento=serializer.validated_data.get('fecha_alerta_vencimiento'),
+                    usuario_ingreso=request.user,
                 )
                 AuditService.registrar_accion(
                     request.user,
@@ -376,7 +413,7 @@ class MaterialDetailView(APIView):
         return Response(MaterialSerializer(material).data)
 
     def patch(self, request, material_id):
-        """T-203.4: Edita campos de un material."""
+        """T-203.4: Edita campos de un material (el código de barras es inmutable)."""
         permisos_usuario = obtener_permisos_efectivos(request.user)
         if 'gestionar_catalogo_inventario' not in permisos_usuario and not request.user.is_superuser:
             return Response({'error': 'No posee permisos para editar materiales.'},
@@ -388,13 +425,74 @@ class MaterialDetailView(APIView):
             return Response({'error': 'Datos inválidos', 'detalles': serializer.errors},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        for field in ['nombre', 'descripcion', 'unidad_medida', 'stock_minimo', 'activo']:
-            if field in serializer.validated_data:
-                setattr(material, field, serializer.validated_data[field])
+        data = serializer.validated_data
+        nueva_categoria = material.categoria
+        if 'categoria_id' in data:
+            nueva_categoria = get_object_or_404(CategoriaMaterial, id=data['categoria_id'], activo=True)
+
+        nuevo_nombre = data['nombre'].strip() if 'nombre' in data else material.nombre
+        if Material.objects.filter(
+            area=material.area,
+            categoria=nueva_categoria,
+            nombre__iexact=nuevo_nombre
+        ).exclude(id=material.id).exists():
+            return Response(
+                {'error': 'Ya existe otro material con ese nombre en la misma área y categoría.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        material.categoria = nueva_categoria
+        material.nombre = nuevo_nombre
+        for field in ['descripcion', 'unidad_medida', 'stock_minimo', 'activo']:
+            if field in data:
+                setattr(material, field, data[field])
 
         material.save()
         AuditService.registrar_accion(request.user, 'EDICION_MATERIAL', {'material_id': material.id}, request=request)
         return Response(MaterialSerializer(material).data)
+
+    def delete(self, request, material_id):
+        """Elimina un material sin historial, o lo desactiva si tiene movimientos asociados."""
+        permisos_usuario = obtener_permisos_efectivos(request.user)
+        if 'gestionar_catalogo_inventario' not in permisos_usuario and not request.user.is_superuser:
+            return Response({'error': 'No posee permisos para desactivar o eliminar materiales.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        material = get_object_or_404(Material, id=material_id)
+        tiene_movimientos = (
+            Lote.objects.filter(material=material).exists()
+            or AjusteInventario.objects.filter(material=material).exists()
+            or SolicitudMaterial.objects.filter(material=material).exists()
+        )
+
+        if tiene_movimientos:
+            material.activo = False
+            material.save(update_fields=['activo'])
+            AuditService.registrar_accion(
+                request.user,
+                'DESACTIVACION_MATERIAL',
+                {'material_id': material.id, 'nombre': material.nombre, 'motivo': 'tiene_movimientos'},
+                request=request,
+            )
+            return Response({
+                'mensaje': 'El material tiene movimientos o lotes asociados, por lo que fue desactivado para preservar el historial.',
+                'desactivado': True,
+                'eliminado': False,
+            }, status=status.HTTP_200_OK)
+
+        nombre_mat = material.nombre
+        material.delete()
+        AuditService.registrar_accion(
+            request.user,
+            'ELIMINACION_MATERIAL',
+            {'material_id': material_id, 'nombre': nombre_mat},
+            request=request,
+        )
+        return Response({
+            'mensaje': 'Material eliminado permanentemente del catálogo.',
+            'desactivado': False,
+            'eliminado': True,
+        }, status=status.HTTP_200_OK)
 
 
 # ─────────────────────────────────────────────────────────────────────

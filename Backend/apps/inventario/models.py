@@ -54,6 +54,7 @@ class CategoriaMaterial(models.Model):
 class Material(models.Model):
     """Material o insumo clínico perteneciente a un Área y Categoría."""
     nombre = models.CharField(max_length=200)
+    codigo_barras = models.CharField(max_length=64, blank=True, null=True, unique=True, db_index=True)
     descripcion = models.TextField(blank=True, default='')
     area = models.ForeignKey(
         Area,

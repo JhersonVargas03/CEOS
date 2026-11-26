@@ -61,12 +61,16 @@ class InventarioRepository {
   // --- Materiales ---
   Future<List<MaterialModel>> buscarMateriales({
     String? query,
+    String? codigoBarras,
     int? areaId,
     int? categoriaId,
   }) async {
     final params = <String, dynamic>{};
     if (query != null && query.trim().isNotEmpty) {
       params['search'] = query.trim();
+    }
+    if (codigoBarras != null && codigoBarras.trim().isNotEmpty) {
+      params['codigo_barras'] = codigoBarras.trim();
     }
     if (areaId != null) {
       params['area_id'] = areaId;
@@ -83,6 +87,11 @@ class InventarioRepository {
     return list.map((e) => MaterialModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  Future<MaterialModel?> buscarMaterialPorCodigoBarras(String codigo) async {
+    final resultados = await buscarMateriales(codigoBarras: codigo);
+    return resultados.isNotEmpty ? resultados.first : null;
+  }
+
   Future<MaterialModel> obtenerDetalleMaterial(int materialId) async {
     final response = await _apiClient.get('${AppConstants.endpointMateriales}/$materialId');
     return MaterialModel.fromJson(response.data as Map<String, dynamic>);
@@ -90,6 +99,7 @@ class InventarioRepository {
 
   Future<MaterialModel> crearMaterial({
     required String nombre,
+    String? codigoBarras,
     required int areaId,
     required int categoriaId,
     int stockMinimo = 5,
@@ -98,12 +108,14 @@ class InventarioRepository {
     int? stockInicial,
     String? codigoLote,
     String? fechaCaducidad,
+    String? fechaAlertaVencimiento,
     double? costoUnitario,
   }) async {
     final response = await _apiClient.post(
       AppConstants.endpointMateriales,
       data: {
         'nombre': nombre,
+        if (codigoBarras != null && codigoBarras.trim().isNotEmpty) 'codigo_barras': codigoBarras.trim(),
         'area_id': areaId,
         'categoria_id': categoriaId,
         'stock_minimo': stockMinimo,
@@ -111,6 +123,8 @@ class InventarioRepository {
         if (stockInicial != null && stockInicial > 0) 'stock_inicial': stockInicial,
         if (codigoLote != null && codigoLote.isNotEmpty) 'codigo_lote': codigoLote,
         if (fechaCaducidad != null && fechaCaducidad.isNotEmpty) 'fecha_caducidad': fechaCaducidad,
+        if (fechaAlertaVencimiento != null && fechaAlertaVencimiento.isNotEmpty)
+          'fecha_alerta_vencimiento': fechaAlertaVencimiento,
         if (costoUnitario != null) 'costo_unitario': costoUnitario,
       },
     );
@@ -485,6 +499,7 @@ class InventarioRepository {
   Future<MaterialModel> actualizarMaterial(
     int materialId, {
     String? nombre,
+    int? categoriaId,
     String? descripcion,
     String? unidadMedida,
     int? stockMinimo,
@@ -492,6 +507,7 @@ class InventarioRepository {
   }) async {
     final data = <String, dynamic>{};
     if (nombre != null) data['nombre'] = nombre;
+    if (categoriaId != null) data['categoria_id'] = categoriaId;
     if (descripcion != null) data['descripcion'] = descripcion;
     if (unidadMedida != null) data['unidad_medida'] = unidadMedida;
     if (stockMinimo != null) data['stock_minimo'] = stockMinimo;
@@ -502,6 +518,13 @@ class InventarioRepository {
       data: data,
     );
     return MaterialModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> eliminarODesactivarMaterial(int materialId) async {
+    final response = await _apiClient.delete(
+      '${AppConstants.endpointMateriales}/$materialId',
+    );
+    return response.data as Map<String, dynamic>;
   }
 
   // --- Actualizar Categoría (admin/gestor) ---

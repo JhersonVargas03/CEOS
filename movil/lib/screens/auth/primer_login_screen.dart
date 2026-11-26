@@ -98,6 +98,12 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
       return;
     }
 
+    final rawTel = _telefonoController.text.trim();
+    if (rawTel.length != 8 || !RegExp(r'^[23467]').hasMatch(rawTel)) {
+      setState(() => _errorMessage = 'Ingresa un número de teléfono válido de 8 dígitos (comienza con 6, 7, 2, 3 o 4)');
+      return;
+    }
+
     setState(() {
       _nuevaPassword = pwd;
       _errorMessage = null;
@@ -110,7 +116,10 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
   Future<void> _cargarInfoTelegram() async {
     try {
       final repo = ref.read(authRepositoryProvider);
-      final data = await repo.primerLoginVincularTelegram();
+      final rawTel = _telefonoController.text.trim();
+      final data = await repo.primerLoginVincularTelegram(
+        telefono: rawTel.length == 8 ? '+591$rawTel' : null,
+      );
       setState(() {
         _telegramLink = data['deep_link'] as String? ?? data['bot_url'] as String? ?? 'https://t.me/Ceos_Clibot';
         _telegramVinculado = data['vinculado'] as bool? ?? false;
@@ -149,10 +158,12 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
           }
           setState(() {
             _telegramVinculado = true;
+            _otpEnviado = true;
             _pollingActivo = false;
             _pasoActual = 3;
             _isLoading = false;
           });
+          _iniciarCuentaRegresiva();
         }
       } catch (_) {
         // Ignorar errores de red temporales durante el polling
@@ -185,9 +196,11 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
         }
         setState(() {
           _telegramVinculado = true;
+          _otpEnviado = true;
           _pasoActual = 3;
           _isLoading = false;
         });
+        _iniciarCuentaRegresiva();
       } else {
         setState(() {
           _errorMessage = 'Aún no detectamos la vinculación. Abre el bot en Telegram y envía /start.';
@@ -441,6 +454,27 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
         ),
         const SizedBox(height: 16),
         ValidadorPasswordEnVivo(password: _passwordController.text),
+        const SizedBox(height: 20),
+        TextField(
+          controller: _telefonoController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(8),
+          ],
+          decoration: InputDecoration(
+            labelText: 'Número de celular / teléfono',
+            hintText: '71234567',
+            prefixIcon: const Icon(PhosphorIconsRegular.phone),
+            prefixText: '+591 ',
+            prefixStyle: CeosTheme.heading(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: CeosColors.areaOdontologia,
+            ),
+            helperText: '8 dígitos (Bolivia) — recibirás el código por Telegram',
+          ),
+        ),
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: _isLoading ? null : _completarPaso1Password,
@@ -492,7 +526,7 @@ class _PrimerLoginScreenState extends ConsumerState<PrimerLoginScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Toca el botón de abajo, luego presiona START en Telegram.',
+                'Toca el botón de abajo, presiona START en Telegram y copia el código de 6 dígitos que te enviará el bot.',
                 style: CeosTheme.body(
                   fontSize: 13,
                   color: CeosColors.lightTextSecondary,

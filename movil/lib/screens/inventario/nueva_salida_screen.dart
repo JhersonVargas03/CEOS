@@ -81,7 +81,7 @@ class _NuevaSalidaScreenState extends ConsumerState<NuevaSalidaScreen> {
 
     if (cant > _materialSeleccionado!.stockTotal) {
       setState(() {
-        _errorMessage = 'No hay suficiente stock digital (disponible: ${_materialSeleccionado!.stockTotal} ${_materialSeleccionado!.unidadMedida}).';
+        _errorMessage = 'No hay suficiente stock registrado en el sistema (disponible: ${_materialSeleccionado!.stockTotal} ${_materialSeleccionado!.unidadMedida}).';
         _errorPorStockInsuficiente = true;
       });
       return;

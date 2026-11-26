@@ -248,6 +248,36 @@ class _AjusteInventarioScreenState extends ConsumerState<AjusteInventarioScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: CeosColors.areaOdontologiaLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: CeosColors.areaOdontologia.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      PhosphorIconsRegular.info,
+                      size: 18,
+                      color: CeosColors.areaOdontologia,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Usa Ajuste Manual solo para corregir errores de conteo, mermas o roturas. Para entregas diarias de la clínica usa Salida.',
+                        style: CeosTheme.body(
+                          fontSize: 12,
+                          color: CeosColors.areaOdontologia,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               if (_errorMessage != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),

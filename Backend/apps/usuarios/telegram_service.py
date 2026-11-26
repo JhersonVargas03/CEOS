@@ -86,6 +86,45 @@ class TelegramBotService:
             return {'ok': False, 'error': str(e)}
 
     @classmethod
+    def _vincular_usuario_y_responder(cls, usuario, str_chat_id, via_fallback=False):
+        """Vincula el chat_id al usuario y, si ya tiene teléfono pendiente de verificar, envía el OTP en el mismo mensaje."""
+        usuario.telegram_chat_id = str_chat_id
+        usuario.telegram_vinculado = True
+        usuario.telegram_token_vinculacion = None
+        usuario.save()
+
+        otp_auto = None
+        if usuario.telefono and not usuario.telefono_verificado:
+            otp_auto = usuario.generar_otp_telefono()
+
+        AuditService.registrar_accion(
+            usuario,
+            'TELEGRAM_VINCULADO',
+            {'chat_id': str_chat_id, 'otp_autoenviado': bool(otp_auto), 'fallback': via_fallback},
+        )
+
+        bloque_otp = ""
+        if otp_auto:
+            bloque_otp = (
+                f"\n\n🔐 <b>CÓDIGO DE VERIFICACIÓN</b>\n"
+                f"Para confirmar tu teléfono <b>{usuario.telefono}</b>, ingresa este código en la app:\n"
+                f"👉 <code>{otp_auto}</code> 👈\n"
+                f"⏱️ <i>Válido por 10 minutos.</i>"
+            )
+
+        TelegramChannel.enviar_mensaje(
+            str_chat_id,
+            f"🎉 <b>¡Cuenta vinculada exitosamente!</b>\n\n"
+            f"Hola <b>{usuario.username}</b>, tu cuenta de Telegram ha sido vinculada al sistema <b>CEOS Clínico</b>.\n\n"
+            f"📱 A partir de ahora recibirás en este chat:\n"
+            f"• Alertas críticas de inventario y stock mínimo\n"
+            f"• Códigos de verificación y recuperación de contraseña\n"
+            f"• Respaldos automáticos de base de datos (Superadmin)"
+            f"{bloque_otp}\n\n"
+            f"<i>Ya puedes volver a la aplicación móvil.</i>"
+        )
+
+    @classmethod
     def procesar_mensaje(cls, chat_id, text, from_user=None, usuario_solicitante=None):
         """
         Procesa un mensaje recibido (sea por Webhook o por Polling).
@@ -106,22 +145,7 @@ class TelegramBotService:
             if token:
                 usuario = Usuario.objects.filter(telegram_token_vinculacion=token).first()
                 if usuario:
-                    usuario.telegram_chat_id = str_chat_id
-                    usuario.telegram_vinculado = True
-                    usuario.telegram_token_vinculacion = None
-                    usuario.save()
-                    AuditService.registrar_accion(usuario, 'TELEGRAM_VINCULADO', {'chat_id': str_chat_id})
-                    
-                    TelegramChannel.enviar_mensaje(
-                        str_chat_id,
-                        f"🎉 <b>¡Cuenta vinculada exitosamente!</b>\n\n"
-                        f"Hola <b>{usuario.username}</b>, tu cuenta de Telegram ha sido vinculada al sistema <b>CEOS Clínico</b>.\n\n"
-                        f"📱 A partir de ahora recibirás en este chat:\n"
-                        f"• Alertas críticas de inventario y stock mínimo\n"
-                        f"• Códigos de verificación y recuperación de contraseña\n"
-                        f"• Respaldos automáticos de base de datos (Superadmin)\n\n"
-                        f"<i>Ya puedes volver a la aplicación móvil.</i>"
-                    )
+                    cls._vincular_usuario_y_responder(usuario, str_chat_id, via_fallback=False)
                     return {'status': 'ok', 'mensaje': f'Usuario {usuario.username} vinculado con éxito'}
                 else:
                     TelegramChannel.enviar_mensaje(
@@ -150,16 +174,7 @@ class TelegramBotService:
                         usuario_target = pendientes[0] if len(pendientes) == 1 else None
 
                     if usuario_target:
-                        usuario_target.telegram_chat_id = str_chat_id
-                        usuario_target.telegram_vinculado = True
-                        usuario_target.telegram_token_vinculacion = None
-                        usuario_target.save()
-                        AuditService.registrar_accion(usuario_target, 'TELEGRAM_VINCULADO', {'chat_id': str_chat_id})
-                        TelegramChannel.enviar_mensaje(
-                            str_chat_id,
-                            f"🎉 <b>¡Cuenta vinculada exitosamente!</b>\n\n"
-                            f"Hola <b>{usuario_target.username}</b>, tu cuenta ha sido vinculada al sistema <b>CEOS Clínico</b>."
-                        )
+                        cls._vincular_usuario_y_responder(usuario_target, str_chat_id, via_fallback=True)
                         return {'status': 'ok', 'mensaje': f'Usuario {usuario_target.username} vinculado por fallback'}
 
                     TelegramChannel.enviar_mensaje(

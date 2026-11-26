@@ -1,4 +1,6 @@
 import logging
+from django.db.models import Sum, Q, F
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from celery import shared_task
 from apps.usuarios.models import Usuario
@@ -15,13 +17,18 @@ def materiales_bajo_minimo():
     T-215.2: Retorna lista de materiales cuyo stock total disponible es menor o igual a su stock mínimo.
     Retorna lista de tuplas: (material, stock_total_disponible, stock_minimo)
     """
-    resultado = []
-    materiales = Material.objects.filter(activo=True)
-    for m in materiales:
-        stock = m.stock_total_disponible()
-        if stock <= m.stock_minimo:
-            resultado.append((m, stock, m.stock_minimo))
-    return resultado
+    materiales = (
+        Material.objects.filter(activo=True)
+        .select_related('area')
+        .annotate(
+            stock_calc=Coalesce(
+                Sum('lotes__cantidad_disponible', filter=Q(lotes__cantidad_disponible__gt=0)),
+                0,
+            )
+        )
+        .filter(stock_calc__lte=F('stock_minimo'))
+    )
+    return [(m, m.stock_calc, m.stock_minimo) for m in materiales]
 
 
 def lotes_con_alerta_vencimiento_activa():

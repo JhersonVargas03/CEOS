@@ -179,7 +179,7 @@ class _GenerarReportePDFScreenState extends ConsumerState<GenerarReportePDFScree
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Reporte regenerado y guardado en ~/Downloads/$fname'),
+              content: Text('✅ Reporte guardado en Descargas del dispositivo ($fname)'),
               backgroundColor: CeosColors.statusSuccess,
               duration: const Duration(seconds: 4),
             ),
@@ -276,7 +276,7 @@ class _GenerarReportePDFScreenState extends ConsumerState<GenerarReportePDFScree
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Reporte guardado en ~/Downloads/$fname'),
+            content: Text('Reporte guardado en Descargas del dispositivo ($fname)'),
             backgroundColor: CeosColors.statusSuccess,
             duration: const Duration(seconds: 4),
           ),

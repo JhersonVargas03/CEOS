@@ -63,11 +63,35 @@ class IconCatalog {
     'drop': PhosphorIconsRegular.drop,
     'eyedropper': PhosphorIconsRegular.eyedropper,
     'spray_bottle': PhosphorIconsRegular.sprayBottle,
+    'microscope': PhosphorIconsRegular.microscope,
+    'cardiology': Symbols.cardiology_rounded,
+    'ecg_heart': Symbols.ecg_heart_rounded,
+    'monitor_heart': Symbols.monitor_heart_rounded,
+    'pulmonology': Symbols.pulmonology_rounded,
+    'oxygen_saturation': Symbols.oxygen_saturation_rounded,
+    'neurology': Symbols.neurology_rounded,
+    'ophthalmology': Symbols.ophthalmology_rounded,
+    'orthopedics': Symbols.orthopedics_rounded,
+    'radiology': Symbols.radiology_rounded,
+    'surgical': Symbols.surgical_rounded,
+    'hematology': Symbols.hematology_rounded,
+    'immunology': Symbols.immunology_rounded,
+    'biotech': Symbols.biotech_rounded,
+    'lab_research': Symbols.lab_research_rounded,
+    'clinical_notes': Symbols.clinical_notes_rounded,
+    'medical_information': Symbols.medical_information_rounded,
+    'health_and_safety': Symbols.health_and_safety_rounded,
+    'clean_hands': Symbols.clean_hands_rounded,
+    'medical_mask': Symbols.medical_mask_rounded,
+    'emergency': Symbols.emergency_rounded,
 
     // --- GESTIÓN, ALMACÉN & GENERAL ---
     'shield': PhosphorIconsRegular.shieldCheck,
+    'shield_plus': PhosphorIconsRegular.shieldPlus,
     'package': PhosphorIconsRegular.package,
     'cube': PhosphorIconsRegular.cube,
+    'archive': PhosphorIconsRegular.archive,
+    'stack': PhosphorIconsRegular.stack,
     'tray': PhosphorIconsRegular.tray,
     'folder': PhosphorIconsRegular.folder,
     'tag': PhosphorIconsRegular.tag,
@@ -80,6 +104,113 @@ class IconCatalog {
     'calendar': PhosphorIconsRegular.calendar,
     'clock': PhosphorIconsRegular.clock,
     'file_pdf': PhosphorIconsRegular.filePdf,
+    'clipboard_text': PhosphorIconsRegular.clipboardText,
+    'barcode': PhosphorIconsRegular.barcode,
+    'qr_code': PhosphorIconsRegular.qrCode,
+    'bed': PhosphorIconsRegular.bed,
+  };
+
+  /// Etiquetas visibles en español para mostrar en la interfaz de selección
+  static const Map<String, String> _labelsEs = {
+    // Estética Facial & Belleza
+    'lips': 'Labios',
+    'face_retouching': 'Estética facial',
+    'spa': 'Spa',
+    'dermatology': 'Dermatología',
+    'flower_lotus': 'Loto',
+    'flower': 'Flor',
+    'leaf': 'Natural',
+    'sparkle': 'Brillo',
+    'star': 'Estrella',
+    'diamond': 'Diamante',
+    'magic_wand': 'Tratamiento',
+    'paint_brush': 'Pincel',
+    'mask_happy': 'Mascarilla',
+    'face_mask': 'Cuidado facial',
+    'eye': 'Ojo / Mirada',
+    'crown': 'Premium',
+
+    // Odontología
+    'tooth': 'Diente',
+    'dentistry': 'Odontología',
+    'bone': 'Hueso',
+
+    // Medicina & Farmacia
+    'pill': 'Pastilla',
+    'syringe': 'Jeringa',
+    'needle': 'Aguja',
+    'prescription': 'Receta',
+    'local_pharmacy': 'Farmacia',
+    'medication': 'Medicamento',
+    'medication_liquid': 'Jarabe',
+    'vaccines': 'Vacuna',
+    'medical_services': 'Maletín médico',
+    'hospital': 'Clínica',
+    'first_aid': 'Auxilios',
+    'first_aid_kit': 'Botiquín',
+    'bandaids': 'Curitas',
+    'healing': 'Curación',
+    'stethoscope': 'Estetoscopio',
+    'thermometer': 'Termómetro',
+    'heartbeat': 'Signos vitales',
+    'blood': 'Sangre',
+    'fluid_med': 'Suero IV',
+    'sanitizer': 'Desinfectante',
+    'hand_soap': 'Jabón',
+    'hand_heart': 'Cuidado',
+    'flask': 'Matraz',
+    'test_tube': 'Tubo ensayo',
+    'dna': 'Genética',
+    'virus': 'Virus',
+    'scissors': 'Tijeras',
+    'drop': 'Gota',
+    'eyedropper': 'Gotero',
+    'spray_bottle': 'Atomizador',
+    'microscope': 'Microscopio',
+    'cardiology': 'Cardiología',
+    'ecg_heart': 'Electrocardiograma',
+    'monitor_heart': 'Monitor cardíaco',
+    'pulmonology': 'Pulmones',
+    'oxygen_saturation': 'Oxímetro',
+    'neurology': 'Neurología',
+    'ophthalmology': 'Oftalmología',
+    'orthopedics': 'Ortopedia',
+    'radiology': 'Radiología',
+    'surgical': 'Cirugía',
+    'hematology': 'Hematología',
+    'immunology': 'Inmunología',
+    'biotech': 'Biotecnología',
+    'lab_research': 'Laboratorio',
+    'clinical_notes': 'Historia clínica',
+    'medical_information': 'Ficha médica',
+    'health_and_safety': 'Bioseguridad',
+    'clean_hands': 'Higiene manos',
+    'medical_mask': 'Barbijo',
+    'emergency': 'Emergencia',
+
+    // Gestión & Almacén
+    'shield': 'Seguridad',
+    'shield_plus': 'Protección',
+    'package': 'Paquete',
+    'cube': 'Caja',
+    'archive': 'Archivo',
+    'stack': 'Lotes',
+    'tray': 'Bandeja',
+    'folder': 'Carpeta',
+    'tag': 'Etiqueta',
+    'scales': 'Balanza',
+    'gear': 'Ajustes',
+    'users': 'Personal',
+    'chart_bar': 'Reportes',
+    'database': 'Base datos',
+    'bell': 'Alertas',
+    'calendar': 'Calendario',
+    'clock': 'Horario',
+    'file_pdf': 'Documento PDF',
+    'clipboard_text': 'Formulario',
+    'barcode': 'Cód. barras',
+    'qr_code': 'Código QR',
+    'bed': 'Camilla',
   };
 
   /// Aliases en español y términos equivalentes para búsqueda y resolución flexible
@@ -146,9 +277,63 @@ class IconCatalog {
     'gotero': 'eyedropper',
     'tijeras': 'scissors',
     'spray': 'spray_bottle',
+    'cardiologia': 'cardiology',
+    'electrocardiograma': 'ecg_heart',
+    'monitor': 'monitor_heart',
+    'pulmones': 'pulmonology',
+    'neumologia': 'pulmonology',
+    'oxigeno': 'oxygen_saturation',
+    'oximetro': 'oxygen_saturation',
+    'neurologia': 'neurology',
+    'oftalmologia': 'ophthalmology',
+    'ortopedia': 'orthopedics',
+    'traumatologia': 'orthopedics',
+    'radiologia': 'radiology',
+    'rayos_x': 'radiology',
+    'cirugia': 'surgical',
+    'bisturi': 'surgical',
+    'hematologia': 'hematology',
+    'inmunologia': 'immunology',
+    'laboratorio': 'lab_research',
+    'microscopio': 'microscope',
+    'historia_clinica': 'clinical_notes',
+    'ficha_medica': 'medical_information',
+    'bioseguridad': 'health_and_safety',
+    'higiene': 'clean_hands',
+    'barbijo': 'medical_mask',
+    'emergencia': 'emergency',
+    'urgencia': 'emergency',
+    'camilla': 'bed',
   };
 
   static List<String> get availableIconNames => _icons.keys.toList();
+
+  static String getLabelEs(String? iconName) {
+    if (iconName == null || iconName.isEmpty) {
+      return _labelsEs[fallbackIconName] ?? fallbackIconName;
+    }
+    final key = iconName.toLowerCase().trim();
+    if (_labelsEs.containsKey(key)) {
+      return _labelsEs[key]!;
+    }
+    final target = _aliases[key];
+    if (target != null && _labelsEs.containsKey(target)) {
+      return _labelsEs[target]!;
+    }
+    return key.replaceAll('_', ' ');
+  }
+
+  static String _normalizeForSearch(String input) {
+    return input
+        .toLowerCase()
+        .trim()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ñ', 'n');
+  }
 
   static IconData getIcon(String? iconName) {
     if (iconName == null || iconName.isEmpty) {
@@ -169,19 +354,29 @@ class IconCatalog {
     if (query.trim().isEmpty) {
       return availableIconNames;
     }
-    final normalized = query.toLowerCase().trim();
+    final normalized = _normalizeForSearch(query);
     final results = <String>{};
 
     // Coincidencia directa en nombres canónicos
     for (final name in _icons.keys) {
-      if (name.contains(normalized)) {
+      if (_normalizeForSearch(name).contains(normalized)) {
         results.add(name);
+      }
+    }
+
+    // Coincidencia en etiquetas visibles en español
+    for (final entry in _labelsEs.entries) {
+      if (_normalizeForSearch(entry.value).contains(normalized)) {
+        if (_icons.containsKey(entry.key)) {
+          results.add(entry.key);
+        }
       }
     }
 
     // Coincidencia en alias (ej. busca 'labios' -> agrega 'lips')
     for (final entry in _aliases.entries) {
-      if (entry.key.contains(normalized) || normalized.contains(entry.key)) {
+      final normAlias = _normalizeForSearch(entry.key);
+      if (normAlias.contains(normalized) || normalized.contains(normAlias)) {
         if (_icons.containsKey(entry.value)) {
           results.add(entry.value);
         }

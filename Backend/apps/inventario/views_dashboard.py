@@ -10,8 +10,17 @@ from .models import Material, Area, CategoriaMaterial
 from .models_lotes import Lote
 from .models_movimientos import MovimientoSalida
 from .models_solicitudes import SolicitudMaterial
+from apps.usuarios.models import obtener_permisos_efectivos
 
 logger = logging.getLogger(__name__)
+
+
+def _tiene_permiso_dashboard(user):
+    """Solo superadmin o usuarios con permiso ver_dashboard / ver_reportes_globales."""
+    if user.is_superuser:
+        return True
+    permisos = obtener_permisos_efectivos(user)
+    return 'ver_dashboard' in permisos or 'ver_reportes_globales' in permisos
 
 
 def parse_fecha_rango(request):
@@ -46,6 +55,11 @@ class MaterialesMasUsadosView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        if not _tiene_permiso_dashboard(request.user):
+            return Response(
+                {'error': 'No posee permisos para consultar el dashboard.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         f_ini, f_fin, dt_inicio, dt_fin = parse_fecha_rango(request)
 
         area_id = request.query_params.get('area_id')
@@ -97,6 +111,11 @@ class ReposicionPreventivaView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        if not _tiene_permiso_dashboard(request.user):
+            return Response(
+                {'error': 'No posee permisos para consultar el dashboard.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         f_ini, f_fin, dt_inicio, dt_fin = parse_fecha_rango(request)
 
         qs = SolicitudMaterial.objects.filter(
@@ -146,6 +165,11 @@ class ReporteGastosView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        if not _tiene_permiso_dashboard(request.user):
+            return Response(
+                {'error': 'No posee permisos para consultar el dashboard.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         f_ini, f_fin, dt_inicio, dt_fin = parse_fecha_rango(request)
 
         lotes_qs = Lote.objects.filter(fecha_ingreso__gte=f_ini, fecha_ingreso__lte=f_fin)
@@ -210,3 +234,31 @@ class ReporteGastosView(APIView):
             'gastos_por_categoria': cat_resultado,
             'gastos_por_material': mat_resultado
         }, status=status.HTTP_200_OK)
+
+
+class CronRevisarAlertasView(APIView):
+    """
+    Disparador HTTP para revisar alertas de inventario sin depender de Celery Beat.
+    Acepta superuser autenticado o header X-Cron-Secret coincidente con CRON_SECRET.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        import os
+        import hmac
+        from .tasks import revisar_alertas_inventario
+
+        cron_secret = os.environ.get('CRON_SECRET', '')
+        header_secret = request.headers.get('X-Cron-Secret', '')
+
+        autorizado_por_secret = bool(cron_secret and header_secret and hmac.compare_digest(cron_secret, header_secret))
+        autorizado_por_usuario = bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+        if not (autorizado_por_secret or autorizado_por_usuario):
+            return Response(
+                {'error': 'No autorizado para ejecutar la revisión de alertas.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        resultado = revisar_alertas_inventario()
+        return Response(resultado, status=status.HTTP_200_OK)

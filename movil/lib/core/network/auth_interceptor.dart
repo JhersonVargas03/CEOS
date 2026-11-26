@@ -43,6 +43,22 @@ class AuthInterceptor extends QueuedInterceptor {
   ) async {
     final statusCode = err.response?.statusCode;
     final path = err.requestOptions.path;
+    final method = err.requestOptions.method.toUpperCase();
+
+    // Reintento automático (1 vez) en peticiones GET ante timeout por cold start
+    final esTimeout = err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.receiveTimeout;
+    final yaReintentado = err.requestOptions.extra['_retried_timeout'] == true;
+    if (esTimeout && method == 'GET' && !yaReintentado) {
+      try {
+        final options = err.requestOptions;
+        options.extra['_retried_timeout'] = true;
+        final retryResponse = await _dio.fetch(options);
+        return handler.resolve(retryResponse);
+      } catch (_) {
+        // Si falla el segundo intento, continúa el flujo normal de error
+      }
+    }
 
     // Check if error is 401 and not on login/refresh itself
     if (statusCode == 401 && !_isPublicEndpoint(path)) {
@@ -53,8 +69,8 @@ class AuthInterceptor extends QueuedInterceptor {
           final refreshDio = Dio(
             BaseOptions(
               baseUrl: err.requestOptions.baseUrl,
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 10),
+              connectTimeout: const Duration(seconds: 25),
+              receiveTimeout: const Duration(seconds: 25),
             ),
           );
 

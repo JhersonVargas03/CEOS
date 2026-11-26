@@ -98,9 +98,10 @@ class _SelectorIconoGridState extends State<SelectorIconoGrid> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            iconName,
-                            style: CeosTheme.dataMono(
-                              fontSize: 9,
+                            IconCatalog.getLabelEs(iconName),
+                            textAlign: TextAlign.center,
+                            style: CeosTheme.body(
+                              fontSize: 10,
                               color: isSelected
                                   ? CeosColors.areaOdontologia
                                   : CeosColors.lightTextSecondary,

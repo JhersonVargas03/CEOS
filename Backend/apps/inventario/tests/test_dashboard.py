@@ -24,7 +24,7 @@ class DashboardYGastosEpica2HTestCase(APITestCase):
             correo_interno='user@clinica.com',
             password='Password123!'
         )
-        rol_inv = Rol.objects.get(nombre='GestorInventario')
+        rol_inv = Rol.objects.get(nombre='Administrador')
         UsuarioRol.objects.create(usuario=self.user, rol=rol_inv)
         invalidar_cache_permisos(self.user)
         tokens = generar_tokens_para_usuario(self.user)

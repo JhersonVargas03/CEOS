@@ -118,10 +118,13 @@ _database_url = os.environ.get('DATABASE_URL', '')
 
 if _database_url:
     import dj_database_url  # pip install dj-database-url
+    # En bases de datos serverless (Neon/Supabase) conn_max_age debe ser 0
+    # para permitir que el compute entre en suspensión (scale to zero) y no agote la cuota de horas gratuitas.
+    _conn_max_age = int(os.environ.get('DB_CONN_MAX_AGE', 0))
     DATABASES = {
         'default': dj_database_url.config(
             default=_database_url,
-            conn_max_age=600,
+            conn_max_age=_conn_max_age,
             conn_health_checks=True,
             ssl_require=True,
         )
@@ -161,6 +164,14 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/minute',
+        'user': '300/minute',
+    },
 }
 
 # ─── JWT ─────────────────────────────────────────────────────────────────────

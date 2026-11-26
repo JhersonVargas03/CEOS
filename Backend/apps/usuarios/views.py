@@ -495,6 +495,18 @@ class PrimerLoginVincularTelegramView(APIView):
 
     def post(self, request):
         usuario = request.user
+        telefono_req = request.data.get('telefono')
+        if telefono_req:
+            try:
+                telefono_normalizado = validar_y_normalizar_telefono_bolivia(telefono_req)
+                usuario.telefono = telefono_normalizado
+                usuario.save(update_fields=['telefono'])
+            except Exception as e:
+                mensaje_err = str(getattr(e, 'detail', e))
+                if isinstance(mensaje_err, list) and mensaje_err:
+                    mensaje_err = str(mensaje_err[0])
+                return Response({'error': mensaje_err}, status=status.HTTP_400_BAD_REQUEST)
+
         token = usuario.generar_token_telegram()
         bot_name = getattr(settings, 'TELEGRAM_BOT_NAME', 'Ceos_Clibot')
         deep_link = f"https://t.me/{bot_name}?start={token}"

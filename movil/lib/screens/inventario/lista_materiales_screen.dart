@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../core/theme/ceos_colors.dart';
 import '../../core/theme/ceos_theme.dart';
 import '../../models/inventario_models.dart';
@@ -176,18 +177,26 @@ class _ListaMaterialesScreenState extends ConsumerState<ListaMaterialesScreen> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'No se encontraron materiales.',
+                              'No hay materiales aquí todavía.',
                               style: CeosTheme.heading(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
-                              'Prueba ajustando los filtros o agregando nuevos lotes.',
+                              'Prueba limpiando los filtros o registra tu primera entrada para crear un material.',
                               style: CeosTheme.body(color: CeosColors.lightTextSecondary),
                               textAlign: TextAlign.center,
                             ),
+                            if (puedeRegistrarEntrada) ...[
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () => context.push('/inventario/entrada'),
+                                icon: const Icon(PhosphorIconsRegular.plus),
+                                label: const Text('Registrar primera entrada'),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -208,6 +217,18 @@ class _ListaMaterialesScreenState extends ConsumerState<ListaMaterialesScreen> {
                           onTap: () {
                             context.push('/inventario/material/${mat.id}');
                           },
+                          onEdit: puedeGestionarCatalogo
+                              ? () async {
+                                  await context.push(
+                                    '/inventario/materiales/${mat.id}/editar',
+                                    extra: mat,
+                                  );
+                                  if (context.mounted) {
+                                    ref.invalidate(materialesFiltradosProvider);
+                                    ref.invalidate(materialesAdminProvider);
+                                  }
+                                }
+                              : null,
                         );
                       },
                     ),
@@ -215,9 +236,23 @@ class _ListaMaterialesScreenState extends ConsumerState<ListaMaterialesScreen> {
                 },
                 loading: () => const SkeletonListaMateriales(),
                 error: (e, _) => Center(
-                  child: Text(
-                    'Error al cargar materiales: $e',
-                    style: CeosTheme.body(color: CeosColors.statusDanger),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          AppException.friendlyMessage(e),
+                          textAlign: TextAlign.center,
+                          style: CeosTheme.body(color: CeosColors.statusDanger),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: () => ref.invalidate(materialesFiltradosProvider),
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -226,38 +261,35 @@ class _ListaMaterialesScreenState extends ConsumerState<ListaMaterialesScreen> {
         ),
       ),
       floatingActionButton: (puedeRegistrarEntrada || puedeGestionarCatalogo)
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (puedeGestionarCatalogo)
-                  FloatingActionButton.extended(
-                    heroTag: 'fab_nuevo_material',
-                    backgroundColor: CeosColors.lightSurface,
-                    foregroundColor: CeosColors.areaOdontologia,
-                    icon: const Icon(PhosphorIconsRegular.cube, size: 20),
-                    label: const Text('Nuevo Material', style: TextStyle(fontWeight: FontWeight.w600)),
-                    onPressed: () async {
-                      final area = ref.read(areaSeleccionadaProvider);
-                      final nuevo = await context.push<MaterialModel>('/inventario/materiales/crear?areaId=${area?.id ?? ''}');
-                      if (nuevo != null && context.mounted) {
-                        ref.invalidate(materialesFiltradosProvider);
-                      }
-                    },
-                  ),
-                if (puedeGestionarCatalogo && puedeRegistrarEntrada) const SizedBox(height: 10),
-                if (puedeRegistrarEntrada)
-                  FloatingActionButton.extended(
-                    heroTag: 'fab_registrar_entrada',
-                    backgroundColor: CeosColors.areaOdontologia,
-                    foregroundColor: Colors.white,
-                    icon: const Icon(PhosphorIconsRegular.plus, size: 20),
-                    label: const Text('Registrar Entrada', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onPressed: () {
-                      context.push('/inventario/entrada');
-                    },
-                  ),
-              ],
+          ? FloatingActionButton.extended(
+              heroTag: 'fab_registrar_entrada',
+              backgroundColor: CeosColors.areaOdontologia,
+              foregroundColor: Colors.white,
+              icon: Icon(
+                puedeRegistrarEntrada ? PhosphorIconsRegular.plus : PhosphorIconsRegular.cube,
+                size: 20,
+              ),
+              label: Text(
+                puedeRegistrarEntrada ? 'Registrar Entrada' : 'Nuevo Material',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onPressed: () async {
+                if (puedeRegistrarEntrada) {
+                  await context.push('/inventario/entrada');
+                  if (context.mounted) {
+                    ref.invalidate(materialesFiltradosProvider);
+                    ref.invalidate(materialesAdminProvider);
+                  }
+                } else {
+                  final area = ref.read(areaSeleccionadaProvider);
+                  final nuevo = await context.push<MaterialModel>(
+                    '/inventario/materiales/crear?areaId=${area?.id ?? ''}',
+                  );
+                  if (nuevo != null && context.mounted) {
+                    ref.invalidate(materialesFiltradosProvider);
+                  }
+                }
+              },
             )
           : null,
     );

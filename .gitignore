@@ -1,5 +1,5 @@
 # ==============================================================================
-# CEOS — .gitignore Maestro (Monorepo)
+# CEOS — .gitignore Maestro (Monorepo) — actualizado 2026-11
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -27,6 +27,14 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 skills-lock.json
 CeosIcono2.jpeg
+
+# ------------------------------------------------------------------------------
+# Agentes de IA — carpetas generadas automáticamente
+# ------------------------------------------------------------------------------
+.agents/
+.gemini/
+.cursor/
+.claude/
 
 # ------------------------------------------------------------------------------
 # Documentación interna y notas de desarrollo
@@ -77,6 +85,21 @@ Backend/tmp_backups/
 celerybeat-schedule
 celerybeat.pid
 *.log
+
+# Archivos de simulación y datos locales de prueba
+Backend/apps/inventario/management/
+
+# Archivos de análisis y reportes internos
+*.pdf
+analisis_*.md
+
+# Claves y certificados
+*.pem
+*.key
+*.crt
+
+# macOS metadata (extra)
+**/.DS_Store
 
 # ------------------------------------------------------------------------------
 # 3. Flutter y Dart (App Móvil)

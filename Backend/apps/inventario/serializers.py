@@ -77,25 +77,37 @@ class MaterialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Material
         fields = [
-            'id', 'nombre', 'descripcion', 'area', 'area_nombre',
+            'id', 'nombre', 'codigo_barras', 'descripcion', 'area', 'area_nombre',
             'categoria', 'categoria_nombre', 'categoria_icono', 'unidad_medida',
             'stock_minimo', 'activo', 'stock_disponible', 'stock_total', 'estado_stock',
             'creado_en', 'actualizado_en'
         ]
         read_only_fields = ['id', 'creado_en', 'actualizado_en']
 
-    def get_stock_disponible(self, obj):
+    def _resolver_stock(self, obj):
+        anotado = getattr(obj, 'stock_total_anotado', None)
+        if anotado is not None:
+            return anotado
         return obj.stock_total_disponible()
+
+    def get_stock_disponible(self, obj):
+        return self._resolver_stock(obj)
 
     def get_stock_total(self, obj):
-        return obj.stock_total_disponible()
+        return self._resolver_stock(obj)
 
     def get_estado_stock(self, obj):
-        return obj.estado_stock()
+        stock = self._resolver_stock(obj)
+        if stock == 0:
+            return 'sin_stock'
+        if stock <= obj.stock_minimo:
+            return 'bajo'
+        return 'ok'
 
 
 class MaterialCreateSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=200)
+    codigo_barras = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True, default=None)
     descripcion = serializers.CharField(required=False, allow_blank=True, default='')
     area_id = serializers.IntegerField()
     categoria_id = serializers.IntegerField()
@@ -105,11 +117,13 @@ class MaterialCreateSerializer(serializers.Serializer):
     cantidad_inicial = serializers.IntegerField(min_value=0, required=False, default=0)
     codigo_lote = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
     fecha_caducidad = serializers.DateField(required=False, allow_null=True, default=None)
+    fecha_alerta_vencimiento = serializers.DateField(required=False, allow_null=True, default=None)
     costo_unitario = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True, default=None)
 
 
 class MaterialUpdateSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=200, required=False)
+    categoria_id = serializers.IntegerField(required=False)
     descripcion = serializers.CharField(required=False, allow_blank=True)
     unidad_medida = serializers.CharField(max_length=50, required=False)
     stock_minimo = serializers.IntegerField(min_value=0, required=False)

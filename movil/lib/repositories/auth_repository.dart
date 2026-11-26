@@ -72,8 +72,11 @@ class AuthRepository {
   }
 
   /// Primer Login - Paso 2: Vincular Telegram
-  Future<Map<String, dynamic>> primerLoginVincularTelegram() async {
-    final response = await _apiClient.post(AppConstants.endpointPrimerLoginTelegram);
+  Future<Map<String, dynamic>> primerLoginVincularTelegram({String? telefono}) async {
+    final response = await _apiClient.post(
+      AppConstants.endpointPrimerLoginTelegram,
+      data: telefono != null ? {'telefono': telefono} : null,
+    );
     return response.data as Map<String, dynamic>;
   }
 

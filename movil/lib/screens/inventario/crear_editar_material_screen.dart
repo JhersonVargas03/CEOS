@@ -44,6 +44,7 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
   String? _areaNombre;
   String? _categoriaNombre;
   String _categoriaIcono = 'package';
+  String? _codigoBarras;
   bool _activo = true;
   bool _isLoading = false;
   bool _isInit = false;
@@ -86,6 +87,7 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
 
   void _cargarDatos(MaterialModel mat) {
     _nombreController.text = mat.nombre;
+    _descripcionController.text = mat.descripcion;
     _unidadMedidaController.text = mat.unidadMedida;
     _stockMinimoController.text = mat.stockMinimo.toString();
     _diasAlertaController.text = mat.diasAlertaCaducidad.toString();
@@ -94,6 +96,8 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
     _areaNombre = mat.areaNombre;
     _categoriaNombre = mat.categoriaNombre;
     _categoriaIcono = mat.categoriaIcono;
+    _codigoBarras = mat.codigoBarras;
+    _activo = mat.activo;
     setState(() {});
   }
 
@@ -550,6 +554,29 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
       return;
     }
 
+    if (_esEdicion) {
+      final confirmado = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Confirmar cambios'),
+          content: Text(
+            '¿Deseas guardar los cambios realizados en "${_nombreController.text.trim()}"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Guardar cambios'),
+            ),
+          ],
+        ),
+      );
+      if (confirmado != true) return;
+    }
+
     setState(() => _isLoading = true);
     final repo = ref.read(inventarioRepositoryProvider);
 
@@ -563,9 +590,8 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
         await repo.actualizarMaterial(
           id,
           nombre: _nombreController.text.trim(),
-          descripcion: _descripcionController.text.trim().isNotEmpty
-              ? _descripcionController.text.trim()
-              : null,
+          categoriaId: _categoriaId,
+          descripcion: _descripcionController.text.trim(),
           unidadMedida: _unidadMedidaController.text.trim(),
           stockMinimo: stockMinimo,
           activo: _activo,
@@ -620,6 +646,70 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _confirmarEliminarODesactivar() async {
+    final id = widget.material?.id ?? widget.materialId;
+    if (id == null) return;
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Desactivar / Eliminar material'),
+        content: const Text(
+          'Si el material tiene lotes o movimientos registrados, se desactivará para conservar el historial.\n\n'
+          'Si no tiene movimientos asociados, se eliminará del catálogo.\n\n¿Deseas continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: CeosColors.statusDanger),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final repo = ref.read(inventarioRepositoryProvider);
+      final res = await repo.eliminarODesactivarMaterial(id);
+      ref.invalidate(materialesFiltradosProvider);
+      ref.invalidate(materialesAdminProvider);
+      ref.invalidate(alertasActivasProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['mensaje'] as String? ?? 'Operación completada'),
+            backgroundColor: (res['eliminado'] == true)
+                ? CeosColors.statusSuccess
+                : CeosColors.statusWarning,
+          ),
+        );
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          context.go('/inventario');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al procesar solicitud: $e'),
+            backgroundColor: CeosColors.statusDanger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -783,9 +873,30 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
                     error: (err, _) => Text('Error al cargar áreas: $err'),
                   ),
                   const SizedBox(height: 16),
+                ],
 
-                  // Categoria Selector (only in create mode)
-                  Row(
+                // Código de barras inmutable si el material ya tiene uno
+                if (_esEdicion && _codigoBarras != null && _codigoBarras!.isNotEmpty) ...[
+                  Text(
+                    'Código de Barras (Inmutable)',
+                    style: CeosTheme.heading(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    initialValue: _codigoBarras,
+                    readOnly: true,
+                    enabled: false,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(PhosphorIconsRegular.barcode, size: 20),
+                      suffixIcon: Icon(PhosphorIconsRegular.lockSimple, size: 18),
+                      helperText: 'El código de barras registrado no puede modificarse.',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Selector de Categoría (disponible tanto en creación como en edición)
+                Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
@@ -884,7 +995,6 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
                       error: (err, _) => Text('Error al cargar categorías: $err'),
                     ),
                   const SizedBox(height: 16),
-                ],
 
                 // Presentación (Unidad de Medida)
                 Text(
@@ -973,7 +1083,7 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
                               ),
                               TextSpan(
                                 text: ', tener un stock de 5 significa 5 cajas completas (500 piezas). '
-                                    'Si en tu clínica prefieres descontar y contar pieza por pieza suelta, indica ',
+                                    'Si prefieres descontar y contar pieza por pieza suelta, indica ',
                               ),
                               TextSpan(
                                 text: '"Unidad / Pieza"',
@@ -1142,6 +1252,31 @@ class _CrearEditarMaterialScreenState extends ConsumerState<CrearEditarMaterialS
                     ),
                   ),
                 ),
+                if (_esEdicion) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _confirmarEliminarODesactivar,
+                    icon: const Icon(
+                      PhosphorIconsRegular.trash,
+                      size: 18,
+                      color: CeosColors.statusDanger,
+                    ),
+                    label: Text(
+                      'Desactivar / Eliminar material',
+                      style: CeosTheme.body(
+                        fontWeight: FontWeight.w600,
+                        color: CeosColors.statusDanger,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: CeosColors.statusDanger.withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

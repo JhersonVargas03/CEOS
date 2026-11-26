@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../core/constants/icon_catalog.dart';
 import '../core/theme/ceos_colors.dart';
 import '../core/theme/ceos_theme.dart';
@@ -7,11 +8,13 @@ import '../models/inventario_models.dart';
 class CardMaterial extends StatelessWidget {
   final MaterialModel material;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
 
   const CardMaterial({
     super.key,
     required this.material,
     required this.onTap,
+    this.onEdit,
   });
 
   Color _getRibbonColor() {
@@ -187,6 +190,19 @@ class CardMaterial extends StatelessWidget {
                             ),
                           ],
                         ),
+                        if (onEdit != null) ...[
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: Icon(
+                              PhosphorIconsRegular.pencilSimple,
+                              size: 18,
+                              color: context.textSecondary,
+                            ),
+                            tooltip: 'Editar material',
+                            onPressed: onEdit,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
                       ],
                     ),
                   ),

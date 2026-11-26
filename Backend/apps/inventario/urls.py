@@ -11,7 +11,10 @@ from .views import (
     SolicitudCancelarView, SolicitudResolverView,
 )
 from .views_reportes import ReportePDFView, ReporteEnviarMensajeriaView, ReporteHistorialView
-from .views_dashboard import MaterialesMasUsadosView, ReposicionPreventivaView, ReporteGastosView
+from .views_dashboard import (
+    MaterialesMasUsadosView, ReposicionPreventivaView,
+    ReporteGastosView, CronRevisarAlertasView,
+)
 
 urlpatterns = [
     # Catálogo de Íconos (HU-304 / Épica 4.A extensión)
@@ -48,6 +51,7 @@ urlpatterns = [
 
     # Reportes PDF y Mensajería (Épica 2.G)
     path('reportes/pdf', ReportePDFView.as_view(), name='inventario_reportes_pdf'),
+    path('cron/revisar-alertas', CronRevisarAlertasView.as_view(), name='inventario_cron_revisar_alertas'),
     path('reportes/enviar-por-mensajeria', ReporteEnviarMensajeriaView.as_view(), name='inventario_reportes_enviar_mensajeria'),
     # T-REPORTE-HIST.2: Historial de reportes generados
     path('reportes/historial', ReporteHistorialView.as_view(), name='inventario_reportes_historial'),

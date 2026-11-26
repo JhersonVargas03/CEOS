@@ -228,8 +228,8 @@ class _ConfiguracionSistemaScreenState extends ConsumerState<ConfiguracionSistem
                         groupValue: config.canalActivo.toLowerCase(),
                         activeColor: CeosColors.areaOdontologia,
                         secondary: const Icon(PhosphorIconsFill.telegramLogo, color: CeosColors.areaOdontologia),
-                        title: Text('Telegram Bot (Activo)', style: CeosTheme.heading(fontSize: 14, fontWeight: FontWeight.w600)),
-                        subtitle: Text('Envío directo e ilimitado vía Bot API.', style: CeosTheme.body(fontSize: 12)),
+                        title: Text('Telegram (Recomendado)', style: CeosTheme.heading(fontSize: 14, fontWeight: FontWeight.w600)),
+                        subtitle: Text('Gratuito e inmediato. Envía alertas y códigos sin límites.', style: CeosTheme.body(fontSize: 12)),
                         onChanged: (val) {
                           if (val != null) _cambiarCanal(val);
                         },
@@ -242,11 +242,11 @@ class _ConfiguracionSistemaScreenState extends ConsumerState<ConfiguracionSistem
                           PhosphorIconsFill.whatsappLogo,
                           color: twilioConfigurado ? CeosColors.statusSuccess : CeosColors.lightTextMuted,
                         ),
-                        title: Text('WhatsApp vía Twilio', style: CeosTheme.heading(fontSize: 14, fontWeight: FontWeight.w600)),
+                        title: Text('WhatsApp Empresarial', style: CeosTheme.heading(fontSize: 14, fontWeight: FontWeight.w600)),
                         subtitle: Text(
                           twilioConfigurado
                               ? 'Configurado y listo para enviar.'
-                              : 'Deshabilitado: Requiere credenciales de Twilio en el backend.',
+                              : 'No disponible: requiere contratar una cuenta de pago (Twilio) en el servidor.',
                           style: CeosTheme.body(
                             fontSize: 12,
                             color: twilioConfigurado ? CeosColors.lightTextSecondary : CeosColors.statusDanger,

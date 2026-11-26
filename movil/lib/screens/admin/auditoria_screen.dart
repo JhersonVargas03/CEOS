@@ -194,6 +194,34 @@ class _AuditoriaScreenState extends ConsumerState<AuditoriaScreen> {
     return rawDetalles.toString();
   }
 
+  static const Map<String, String> _etiquetasAccion = {
+    'INGRESO_LOTE': 'Ingreso de stock',
+    'SALIDA_MATERIAL': 'Salida de material',
+    'CREACION_MATERIAL': 'Registro de nuevo material',
+    'EDICION_MATERIAL': 'Edición de material',
+    'DESACTIVACION_MATERIAL': 'Desactivación de material',
+    'ELIMINACION_MATERIAL': 'Eliminación de material',
+    'AJUSTE_INVENTARIO': 'Ajuste manual de inventario',
+    'SOLICITUD_CREADA': 'Solicitud de material creada',
+    'SOLICITUD_APROBADA': 'Solicitud aprobada',
+    'SOLICITUD_RECHAZADA': 'Solicitud rechazada',
+    'TELEGRAM_VINCULADO': 'Telegram vinculado',
+    'TELEFONO_VERIFICADO': 'Teléfono verificado',
+    'PRIMER_LOGIN_CAMBIO_PASSWORD': 'Primer cambio de contraseña',
+    'LOGIN_EXITOSO': 'Inicio de sesión exitoso',
+    'LOGIN_FALLIDO': 'Intento de inicio fallido',
+    'BACKUP_MANUAL': 'Copia de seguridad generada',
+  };
+
+  String _traducirAccion(String accion) {
+    final upper = accion.trim().toUpperCase();
+    return _etiquetasAccion[upper] ??
+        accion.replaceAll('_', ' ').toLowerCase().replaceFirstMapped(
+              RegExp(r'^[a-z]'),
+              (m) => m.group(0)!.toUpperCase(),
+            );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -398,7 +426,7 @@ class _AuditoriaScreenState extends ConsumerState<AuditoriaScreen> {
                                                   children: [
                                                     Expanded(
                                                       child: Text(
-                                                        accion,
+                                                        _traducirAccion(accion),
                                                         style: CeosTheme.body(
                                                           fontSize: 13,
                                                           fontWeight: FontWeight.w600,

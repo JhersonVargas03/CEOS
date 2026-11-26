@@ -206,12 +206,12 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                       const Icon(PhosphorIconsRegular.database, size: 36, color: CeosColors.areaOdontologia),
                       const SizedBox(height: 10),
                       Text(
-                        'Respaldo Manual Bajo Demanda',
+                        'Copia de Seguridad Manual',
                         style: CeosTheme.heading(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Recomendado antes de cambios críticos o migraciones. Se genera y envía automáticamente a Telegram.',
+                        'Protege todos los datos de la clínica antes de cambios importantes. Se genera y envía automáticamente a Telegram.',
                         style: CeosTheme.body(fontSize: 12, color: CeosColors.lightTextSecondary),
                         textAlign: TextAlign.center,
                       ),
@@ -224,7 +224,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
                             : const Icon(PhosphorIconsRegular.arrowCounterClockwise),
-                        label: Text(_generando ? 'Generando Backup...' : 'Generar Backup Ahora'),
+                        label: Text(_generando ? 'Generando Copia...' : 'Crear Copia de Seguridad'),
                         onPressed: _generando ? null : _generarBackup,
                       ),
                     ],
@@ -247,7 +247,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        'No hay registros de backups anteriores.',
+                        'Aún no se han generado copias de seguridad.',
                         style: CeosTheme.body(color: CeosColors.lightTextMuted),
                       ),
                     ),

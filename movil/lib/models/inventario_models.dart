@@ -75,6 +75,8 @@ enum EstadoRibbon { normal, advertencia, critico }
 class MaterialModel {
   final int id;
   final String nombre;
+  final String descripcion;
+  final String? codigoBarras;
   final int areaId;
   final String areaNombre;
   final int categoriaId;
@@ -86,10 +88,13 @@ class MaterialModel {
   final String? fechaCaducidadProxima;
   final String unidadMedida;
   final String? icono;
+  final bool activo;
 
   const MaterialModel({
     required this.id,
     required this.nombre,
+    this.descripcion = '',
+    this.codigoBarras,
     required this.areaId,
     this.areaNombre = '',
     required this.categoriaId,
@@ -101,6 +106,7 @@ class MaterialModel {
     this.fechaCaducidadProxima,
     this.unidadMedida = 'unidades',
     this.icono,
+    this.activo = true,
   });
 
   EstadoRibbon get estadoRibbon {
@@ -165,6 +171,8 @@ class MaterialModel {
     return MaterialModel(
       id: json['id'] as int? ?? 0,
       nombre: json['nombre'] as String? ?? '',
+      descripcion: json['descripcion'] as String? ?? '',
+      codigoBarras: json['codigo_barras'] as String?,
       areaId: parsedAreaId,
       areaNombre: parsedAreaNombre,
       categoriaId: parsedCategoriaId,
@@ -176,6 +184,7 @@ class MaterialModel {
       fechaCaducidadProxima: json['fecha_caducidad_proxima'] as String?,
       unidadMedida: json['unidad_medida'] as String? ?? 'unidades',
       icono: json['icono'] as String?,
+      activo: json['activo'] as bool? ?? true,
     );
   }
 }
