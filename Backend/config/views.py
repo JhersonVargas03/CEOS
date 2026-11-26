@@ -41,15 +41,15 @@ def app_version_check(request):
     Permite a los dispositivos móviles consultar la versión vigente del APK,
     las novedades de la versión y la URL de descarga directa desde GitHub Releases.
     """
-    version_actual = os.environ.get("APP_CURRENT_VERSION", "1.0.8")
-    version_minima = os.environ.get("APP_MIN_VERSION", "1.0.8")
+    version_actual = os.environ.get("APP_CURRENT_VERSION", "1.0.9")
+    version_minima = os.environ.get("APP_MIN_VERSION", "1.0.9")
     url_descarga = os.environ.get(
         "APP_DOWNLOAD_URL",
         "https://github.com/JhersonVargas03/CEOS/releases/latest/download/CEOS.apk"
     )
     notas = os.environ.get(
         "APP_RELEASE_NOTES",
-        "Envío ultra-rápido de código OTP por Telegram, navegación fluida sin bloqueos al confirmar código y entrada automática al sistema."
+        "Editor completo de materiales, entrada unificada con escáner de código de barras, íconos en español, mejoras de UX y mayor estabilidad de conexión."
     )
     obligatoria = os.environ.get("APP_UPDATE_MANDATORY", "true").lower() in ("true", "1", "yes")
 
